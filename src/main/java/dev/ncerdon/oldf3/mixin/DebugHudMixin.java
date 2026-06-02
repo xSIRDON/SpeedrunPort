@@ -24,7 +24,8 @@ public abstract class DebugHudMixin {
     @ModifyVariable(
             method = "drawText(Lnet/minecraft/client/gui/DrawContext;Ljava/util/List;Z)V",
             at = @At("HEAD"),
-            argsOnly = true)
+            argsOnly = true,
+            index = 2)
     private List<String> oldf3$replaceColumn(List<String> original, DrawContext context, List<String> lines, boolean left) {
         MinecraftClient client = MinecraftClient.getInstance();
         return left ? LeftColumn.build(client) : RightColumn.build(client);
