@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "old-f3",
+  "version": "${version}",
+  "name": "Old F3",
+  "description": "Replaces the F3 debug screen with the classic 1.16.1-style layout.",
+  "authors": ["ncerdon"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.ncerdon.oldf3.OldF3Client"]
+  },
+  "mixins": [
+    { "config": "oldf3.mixins.json", "environment": "client" }
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "*",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
