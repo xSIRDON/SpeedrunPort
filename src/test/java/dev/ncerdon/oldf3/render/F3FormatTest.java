@@ -24,4 +24,10 @@ class F3FormatTest {
     void percent_isZeroWhenWholeIsZero() {
         assertEquals(0L, F3Format.percent(123L, 0L));
     }
+
+    @Test
+    void percent_canExceed100() {
+        // Mem line can briefly exceed 100% under GC pressure (total > max).
+        assertEquals(200L, F3Format.percent(2048L, 1024L));
+    }
 }

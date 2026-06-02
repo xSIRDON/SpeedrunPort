@@ -33,11 +33,10 @@ public final class RightColumn {
         long free = Runtime.getRuntime().freeMemory();
         long used = total - free;
 
-        lines.add("Java: " + System.getProperty("java.version") + " "
-                + System.getProperty("sun.arch.data.model") + "bit");
-        lines.add(String.format(Locale.ROOT, "Mem: %d%% %d/%dMB",
+        lines.add(String.format(Locale.ROOT, "Java: %s 64bit", System.getProperty("java.version")));
+        lines.add(String.format(Locale.ROOT, "Mem: %2d%% %03d/%03dMB",
                 F3Format.percent(used, max), F3Format.toMiB(used), F3Format.toMiB(max)));
-        lines.add(String.format(Locale.ROOT, "Allocated: %d%% %dMB",
+        lines.add(String.format(Locale.ROOT, "Allocated: %2d%% %03dMB",
                 F3Format.percent(total, max), F3Format.toMiB(total)));
         lines.add("");
         lines.add("CPU: " + GLX._getCpuInfo());
