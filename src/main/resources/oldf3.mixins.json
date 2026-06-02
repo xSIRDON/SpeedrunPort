@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "dev.ncerdon.oldf3.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [],
+  "client": ["DebugHudMixin"],
   "injectors": { "defaultRequire": 1 }
 }
