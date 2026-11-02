@@ -1,7 +1,7 @@
 # SpeedrunPort
 
-Fabric mod for Minecraft 26.3 that brings back the old 1.16.1 F3 screen and adds a borderless
-window toggle that plays nice with overlays like Ninjabrain Bot.
+Fabric mod for Minecraft 26.3 that brings back the old 1.16.1 F3 screen, adds a borderless
+window toggle that plays nice with overlays like Ninjabrain Bot, and has StandardSettings built in.
 
 ## Features
 
@@ -27,6 +27,38 @@ window toggle that plays nice with overlays like Ninjabrain Bot.
   real fullscreen and always-on-top windows stay on top. Nothing spills onto a second monitor.
 - turning it off puts the window back where it was, and it's remembered between launches
 - F11 is still vanilla fullscreen
+
+**StandardSettings**
+
+Resets your options every time you make a new world, so every run starts the same. Same idea and
+file format as the StandardSettings mod.
+
+- set your options how you want them, then run `/standardsettings save` in any world. That writes
+  `config/standardoptions.txt` from your current settings (it does nothing until that file exists)
+- the file is just options.txt lines, so you can also edit it by hand. Delete the lines you don't
+  want forced. If the file's only line is a path to another file, that file is used instead, so
+  several instances can share one
+- every new world gets a copy in its folder (`saves/<world>/standardoptions.txt`) for verification
+- `/standardsettings` shows the status, `/standardsettings off` / `on` turns it off and on,
+  `/standardsettings apply` applies it right now
+
+Extra lines it understands:
+
+| line | does |
+|---|---|
+| `chunkborders:true` | chunk borders on (always, not just with F3 open) |
+| `hitboxes:true` | hitboxes on |
+| `perspective:0` | camera: 0 first person, 1 back, 2 front |
+| `f1:false` | hide the HUD or not |
+| `pieDirectory:root.render.level` | where the F3 pie chart starts. `/standardsettings save` stores wherever you navigated the pie to |
+| `fovOnWorldJoin:90` | FOV once you're in the world |
+| `renderDistanceOnWorldJoin:12` | render distance once you're in the world (keep the normal one low for a fast world load) |
+| `simulationDistanceOnWorldJoin:8` | same for simulation distance |
+| `entityDistanceScalingOnWorldJoin:1.0` | same for entity distance |
+| `guiScaleOnWorldJoin:3` | same for GUI scale |
+| `autoF3Esc:true` | pause without the menu right after joining |
+| `firstAutoF3EscDelay:22` | ticks to wait before that pause |
+| `toggleStandardSettings:false` | turn it all off |
 
 ## Install
 

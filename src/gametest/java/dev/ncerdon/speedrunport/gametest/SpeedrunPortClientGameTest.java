@@ -7,18 +7,26 @@ import dev.ncerdon.speedrunport.borderless.BorderlessBounds.Rect;
 import dev.ncerdon.speedrunport.borderless.BorderlessToggle;
 import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import dev.ncerdon.speedrunport.f3.RightColumn;
+import dev.ncerdon.speedrunport.standardsettings.StandardSettings;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.TestInput;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import net.minecraft.client.gui.components.debug.DebugScreenEntries;
+import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.world.level.storage.LevelResource;
 import org.lwjgl.sdl.SDLStdinc;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.sdl.SDL_Rect;
 import org.lwjgl.system.MemoryStack;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -33,6 +41,12 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         TestInput input = context.getInput();
+        try {
+            // StandardSettings is tested at the end; keep it out of the first world.
+            Files.deleteIfExists(StandardSettings.file());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         // Small enough that the window plus its title bar fits on a 1920x1080 monitor.
         input.resizeWindow(1280, 720);
 
@@ -129,6 +143,42 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
                 throw new AssertionError("Leaving borderless should restore " + windowed + " but the window is " + restored);
             }
             check(context, mc -> !SpeedrunPortConfig.borderlessWindow(), "turning it off is remembered too");
+        }
+
+        // StandardSettings: a new world resets the options from config/standardoptions.txt.
+        Path standardFile = StandardSettings.file();
+        try {
+            Files.write(standardFile, List.of("maxFps:90", "chunkborders:true", "renderDistanceOnWorldJoin:7"));
+            context.runOnClient(mc -> mc.options.framerateLimit().set(200));
+            try (TestSingleplayerContext standardWorld = context.worldBuilder().create()) {
+                // Not waitForChunksRender(): it wants the full square of the new render distance, which
+                // never fills after the mid-join change. A chunk past the old distance (5) proves it took.
+                context.waitFor(mc -> mc.player != null && mc.level.getChunkSource()
+                        .hasChunk(mc.player.chunkPosition().x() + 6, mc.player.chunkPosition().z()), 1200);
+                check(context, mc -> mc.options.framerateLimit().get() == 90, "the standard maxFps is applied to the new world");
+                check(context, mc -> mc.options.renderDistance().get() == 7, "renderDistanceOnWorldJoin is applied on join");
+                check(context, mc -> mc.debugEntries.isCurrentlyEnabled(DebugScreenEntries.CHUNK_BORDERS), "chunkborders turns chunk borders on");
+                boolean snapshot = standardWorld.getServer().computeOnServer(
+                        server -> Files.exists(server.getWorldPath(LevelResource.ROOT).resolve("standardoptions.txt")));
+                if (!snapshot) {
+                    throw new AssertionError("Expected: the world folder gets a standardoptions.txt snapshot");
+                }
+
+                context.runOnClient(mc -> mc.options.framerateLimit().set(120));
+                context.runOnClient(StandardSettings::saveCurrent);
+                List<String> saved = Files.readAllLines(standardFile);
+                if (!saved.contains("maxFps:120") || !saved.contains("chunkborders:true") || saved.stream().anyMatch(l -> l.startsWith("version:"))) {
+                    throw new AssertionError("/standardsettings save should store current options and keep the extras, got " + saved);
+                }
+                context.runOnClient(mc -> mc.debugEntries.setStatus(DebugScreenEntries.CHUNK_BORDERS, DebugScreenEntryStatus.NEVER));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } finally {
+            try {
+                Files.deleteIfExists(standardFile);
+            } catch (IOException ignored) {
+            }
         }
     }
 
