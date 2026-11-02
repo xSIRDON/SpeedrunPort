@@ -1,11 +1,9 @@
 package dev.ncerdon.speedrunport.f3;
 
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
+import dev.ncerdon.speedrunport.compat.Compat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.debug.DebugEntryLookingAt;
-import net.minecraft.client.gui.components.debug.DebugEntrySystemSpecs;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.TypedInstance;
@@ -45,14 +43,10 @@ public final class RightColumn {
         lines.add(String.format(Locale.ROOT, "Allocated: % 2d%% %03dMB",
                 F3Format.percent(total, max), F3Format.toMiB(total)));
         lines.add("");
-        lines.add("CPU: " + DebugEntrySystemSpecs.getCpuInfo());
+        lines.add("CPU: " + Compat.cpuInfo());
         lines.add("");
 
-        var device = RenderSystem.getDevice().getDeviceInfo();
-        Window window = mc.getWindow();
-        lines.add(String.format(Locale.ROOT, "Display: %dx%d (%s)", window.getWidth(), window.getHeight(), device.vendorName()));
-        lines.add(device.name());
-        lines.add(device.backendName() + " " + device.driverInfo().lines().findFirst().orElse(""));
+        lines.addAll(Compat.gpuLines(mc.getWindow()));
 
         if (!mc.showOnlyReducedInfo()) {
             appendTargets(mc, lines);

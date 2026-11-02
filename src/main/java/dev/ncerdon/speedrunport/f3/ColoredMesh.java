@@ -1,15 +1,9 @@
 package dev.ncerdon.speedrunport.f3;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import dev.ncerdon.speedrunport.compat.Compat;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import org.joml.Matrix3x2f;
-import org.joml.Matrix3x2fc;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -56,7 +50,7 @@ public final class ColoredMesh {
         int top = (int) Math.floor(minY);
         ScreenRectangle bounds = new ScreenRectangle(left, top,
                 (int) Math.ceil(maxX) - left, (int) Math.ceil(maxY) - top).transformMaxBounds(pose);
-        graphics.guiRenderState.addGuiElement(new State(pose,
+        graphics.guiRenderState.addGuiElement(Compat.coloredQuads(pose,
                 Arrays.copyOf(positions, vertexCount * 2), Arrays.copyOf(colors, vertexCount),
                 scissor, scissor != null ? scissor.intersection(bounds) : bounds));
     }
@@ -79,26 +73,5 @@ public final class ColoredMesh {
     /** z of (b - a) x (c - a); negative is the winding vanilla's GUI rectangles use. */
     private static float cross(float ax, float ay, float bx, float by, float cx, float cy) {
         return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-    }
-
-    private record State(Matrix3x2fc pose, float[] positions, int[] colors,
-                         @Nullable ScreenRectangle scissorArea, @Nullable ScreenRectangle bounds)
-            implements GuiElementRenderState {
-        @Override
-        public void buildVertices(VertexConsumer consumer) {
-            for (int i = 0; i < colors.length; i++) {
-                consumer.addVertexWith2DPose(pose, positions[i * 2], positions[i * 2 + 1]).setColor(colors[i]);
-            }
-        }
-
-        @Override
-        public RenderPipeline pipeline() {
-            return RenderPipelines.GUI;
-        }
-
-        @Override
-        public TextureSetup textureSetup() {
-            return TextureSetup.noTexture();
-        }
     }
 }

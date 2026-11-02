@@ -1,6 +1,6 @@
 package dev.ncerdon.speedrunport.f3;
 
-import com.mojang.blaze3d.platform.InputConstants;
+import dev.ncerdon.speedrunport.compat.Compat;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
@@ -14,18 +14,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * The 1.16.1 debug keys that 26.3 removed: F3 + F (render distance) and F3 + Q (key list).
+ * The 1.16.1 debug keys that 26.x removed: F3 + F (render distance) and F3 + Q (key list).
  * They live in the Debug category of Controls, so they can be rebound like vanilla's.
  */
 public final class ClassicDebugKeys {
-    /** SDL scancodes, which is what 26.3 key mappings store. */
-    private static final int KEY_F = 9;
-    private static final int KEY_Q = 20;
-
     public static final KeyMapping CYCLE_RENDER_DISTANCE = new KeyMapping(
-            "key.speedrunport.cycleRenderDistance", InputConstants.Type.KEYBOARD, KEY_F, KeyMapping.Category.DEBUG);
+            "key.speedrunport.cycleRenderDistance", Compat.KEYBOARD, Compat.KEY_F, KeyMapping.Category.DEBUG);
     public static final KeyMapping HELP = new KeyMapping(
-            "key.speedrunport.help", InputConstants.Type.KEYBOARD, KEY_Q, KeyMapping.Category.DEBUG);
+            "key.speedrunport.help", Compat.KEYBOARD, Compat.KEY_Q, KeyMapping.Category.DEBUG);
 
     private ClassicDebugKeys() {}
 
@@ -34,9 +30,10 @@ public final class ClassicDebugKeys {
         OptionInstance<Integer> renderDistance = mc.options.renderDistance();
         int min = 2;
         int max = 32;
-        if (renderDistance.values() instanceof OptionInstance.IntRangeBase range) {
-            min = range.minInclusive();
-            max = range.maxInclusive();
+        int[] range = Compat.intRange(renderDistance);
+        if (range != null) {
+            min = range[0];
+            max = range[1];
         }
         int next = F3Format.stepRenderDistance(renderDistance.get(), reverse, min, max);
         renderDistance.set(next);
@@ -75,11 +72,11 @@ public final class ClassicDebugKeys {
                 entry(options.keyDebugFpsCharts, Component.translatable("speedrunport.help.fps_charts")),
                 entry(options.keyDebugNetworkCharts, Component.translatable("speedrunport.help.network_charts")),
                 entry(options.keyDebugLightmapTexture, Component.translatable("speedrunport.help.lightmap_texture")),
-                entry(options.keyDebugSwitchTranslucencyMode, Component.translatable("speedrunport.help.improved_transparency")));
+                entry(Compat.translucencyKey(options), Component.translatable("speedrunport.help.improved_transparency")));
 
         for (Entry entry : entries) {
             if (entry.keys() != null) {
-                mc.gui.hud.getChat().addClientSystemMessage(
+                Compat.chat(mc).addClientSystemMessage(
                         Component.translatable("speedrunport.help.line", entry.keys(), entry.description()));
             }
         }
@@ -94,7 +91,10 @@ public final class ClassicDebugKeys {
         return key.getTranslatedKeyMessage().getString();
     }
 
-    private static Entry entry(KeyMapping key, Component description) {
+    private static Entry entry(@Nullable KeyMapping key, Component description) {
+        if (key == null) {
+            return new Entry(null, description);
+        }
         return new Entry(combo(Minecraft.getInstance().options.keyDebugModifier, key), description);
     }
 

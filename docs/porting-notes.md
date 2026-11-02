@@ -1,4 +1,4 @@
-# Porting notes (26.3)
+# Porting notes (26.x)
 
 Notes to self for the next version bump.
 
@@ -76,9 +76,9 @@ back.
 
 Needs JDK 25 (Gradle 9.8.2, Loom 1.19.3).
 
-- `./gradlew build`: jar + unit tests
-- `./gradlew runClientGameTest`: opens the game, makes a world, goes through the F3 combos and the
-  borderless key, saves screenshots to `build/run/clientGameTest/screenshots`
+- `./gradlew build collectJars`: every version's jar + unit tests, jars copied to `build/libs`
+- `./gradlew :26.3:runClientGameTest` (or `:26.1:` / `:26.2:`): opens the game, makes a world, goes through the F3 combos and the
+  borderless key, saves screenshots to `versions/<mc>/build/run/clientGameTest/screenshots`
 - add `"-PextraMods=path/to/sodium.jar;path/to/lithium.jar"` to load other mods alongside (not
   Fabric API, that's already on the dev classpath)
 
@@ -95,3 +95,31 @@ and only the lines in the file change. On-join values go in from `ClientPlayConn
 Careful in tests: `waitForChunksRender()` never finishes after render distance changes mid-join
 (it wants the whole square of the new distance), so the game test waits for one chunk past the
 old distance instead.
+
+## Versions
+
+One build per Minecraft API: `versions/26.1` (covers 26.1 - 26.1.2), `versions/26.2`,
+`versions/26.3`. Everything shared lives in `src/`; a version folder only has its
+gradle.properties and a `Compat` class (plus `TestCompat` for the game test). The window code is in
+`platform/glfw` (26.1, 26.2) and `platform/sdl` (26.3+).
+
+What differs, so far:
+
+| | 26.1 | 26.2 | 26.3 |
+|---|---|---|---|
+| window | GLFW | GLFW | SDL3 |
+| key codes | GLFW (F = 70, Q = 81, F12 = 301) | GLFW | SDL scancodes (F = 9, Q = 20, F12 = 69) |
+| screen / chat / F1 | `mc.screen`, `gui.getChat()`, `options.hideGui` | `gui.screen()`, `gui.hud` | `gui.screen()`, `gui.hud` |
+| chunk / entity stats | `levelRenderer.getSectionStatistics()` | `levelExtractor.sectionStatistics()` | same as 26.2 |
+| post effects | `currentPostEffect()` | `currentPostEffect()` | `getAppliedPostEffects()` |
+| GPU info | `GpuDevice.getVendor()` etc. | `getDeviceInfo()` | `getDeviceInfo()` |
+| `RenderPipeline` | `com.mojang.blaze3d.pipeline` | same | `com.mojang.renderpearl.api.pipeline` |
+| `extractLines`, charts, pie | no screen size args | no screen size args | take screen size, plus "Debug GUI Scale" |
+| global keys | inline in `KeyboardHandler.keyPress` | `Minecraft.handleGlobalKeyPress` | same as 26.2 |
+
+The signature changes in the last rows are handled in the shared mixins with one handler per
+signature (`require = 0`), so only the matching one applies. The F12 key hooks
+`KeyboardHandler.keyPress` HEAD since that exists in every version.
+
+For a new version: `./gradlew genSources -P...`, compile against it, and copy the closest `versions/`
+folder.

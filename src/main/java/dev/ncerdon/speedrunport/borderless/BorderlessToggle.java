@@ -1,17 +1,14 @@
 package dev.ncerdon.speedrunport.borderless;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import dev.ncerdon.speedrunport.SpeedrunPortConfig;
+import dev.ncerdon.speedrunport.compat.Compat;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
 /** The "Toggle Borderless Window" key (Controls > Miscellaneous, F12 by default). */
 public final class BorderlessToggle {
-    /** SDL scancode for F12; 26.3 key mappings store SDL scancodes. */
-    private static final int KEY_F12 = 69;
-
     public static final KeyMapping KEY = new KeyMapping(
-            "key.speedrunport.borderlessWindow", InputConstants.Type.KEYBOARD, KEY_F12, KeyMapping.Category.MISC);
+            "key.speedrunport.borderlessWindow", Compat.KEYBOARD, Compat.KEY_F12, KeyMapping.Category.MISC);
 
     private BorderlessToggle() {}
 

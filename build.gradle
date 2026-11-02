@@ -1,72 +1,106 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
-    id 'java'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 }
 
-version = project.mod_version
-group = project.maven_group
+// Each versions/<mc> project builds the shared code in src/ together with its own small
+// compat class, plus the window code for the platform it runs on (glfw before 26.3, sdl after).
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'net.fabricmc.fabric-loom'
 
-base {
-    archivesName = project.archives_base_name
-}
+    def mc = project.name
+    def windowSrc = rootProject.file("platform/${project.window_platform}")
 
-repositories {
-    maven { url = "https://maven.fabricmc.net/" }
-    mavenCentral()
-}
+    version = "${rootProject.mod_version}+${mc}"
+    group = rootProject.maven_group
 
-dependencies {
+    base {
+        archivesName = rootProject.archives_base_name
+    }
+
+    repositories {
+        maven { url = "https://maven.fabricmc.net/" }
+        mavenCentral()
+    }
+
     // 26.x ships unobfuscated, so there is no mappings line: the code uses Mojang's own names.
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraft_version}"
+        implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    testImplementation platform("org.junit:junit-bom:5.12.2")
-    testImplementation "org.junit.jupiter:junit-jupiter"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-}
-
-test {
-    useJUnitPlatform()
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        testImplementation platform("org.junit:junit-bom:5.12.2")
+        testImplementation "org.junit.jupiter:junit-jupiter"
+        testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     }
-    withSourcesJar()
-}
 
-tasks.withType(JavaCompile).configureEach {
-    it.options.release = 25
-}
+    sourceSets {
+        main {
+            java.srcDirs = [rootProject.file('src/main/java'), new File(windowSrc, 'src/main/java'), 'src/main/java']
+            resources.srcDirs = [rootProject.file('src/main/resources')]
+        }
+        test {
+            java.srcDirs = [rootProject.file('src/test/java')]
+        }
+    }
 
-processResources {
-    inputs.property "version", project.version
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version
+    // Real-client tests: `./gradlew :26.3:runClientGameTest` opens the game, makes a test world,
+    // presses the F3 combos and saves screenshots to versions/<mc>/build/run/clientGameTest/screenshots.
+    fabricApi {
+        configureTests {
+            createSourceSet = true
+            modId = "speedrunport-gametest"
+            enableGameTests = false
+            enableClientGameTests = true
+        }
+    }
+
+    sourceSets.gametest {
+        java.srcDirs = [rootProject.file('src/gametest/java'), new File(windowSrc, 'src/gametest/java'), 'src/gametest/java']
+        resources.srcDirs = [rootProject.file('src/gametest/resources')]
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+        withSourcesJar()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        it.options.release = 25
+    }
+
+    tasks.named('compileJava') {
+        options.compilerArgs << '-Xlint:deprecation'
+    }
+
+    processResources {
+        def props = [version: project.version, minecraft_dependency: project.minecraft_dependency]
+        inputs.properties props
+        filesMatching("fabric.mod.json") {
+            expand props
+        }
+    }
+
+    // Optional: -PextraMods="a.jar;b.jar" also loads those mod jars (e.g. Sodium) into runClient and
+    // runClientGameTest, to check SpeedrunPort alongside them.
+    tasks.matching { it.name in ['runClient', 'runClientGameTest'] }.configureEach {
+        if (project.hasProperty('extraMods')) {
+            jvmArgs "-Dfabric.addMods=${project.extraMods}"
+        }
     }
 }
 
-tasks.named('compileJava') {
-    options.compilerArgs << '-Xlint:deprecation'
-}
-
-// Real-client tests: `./gradlew runClientGameTest` opens the game, makes a test world, presses the
-// F3 combos and saves screenshots to build/run/clientGameTest/screenshots. Not part of `build`.
-fabricApi {
-    configureTests {
-        createSourceSet = true
-        modId = "speedrunport-gametest"
-        enableGameTests = false
-        enableClientGameTests = true
+// `./gradlew collectJars` puts every version's jar in build/libs.
+tasks.register('collectJars', Copy) {
+    dependsOn subprojects.collect { "${it.path}:jar" }
+    from(subprojects.collect { it.layout.buildDirectory.dir('libs') }) {
+        exclude '*-sources.jar'
     }
-}
-
-// Optional: -PextraMods="a.jar;b.jar" also loads those mod jars (e.g. Sodium) into runClient and
-// runClientGameTest, to check SpeedrunPort alongside them.
-tasks.matching { it.name in ['runClient', 'runClientGameTest'] }.configureEach {
-    if (project.hasProperty('extraMods')) {
-        jvmArgs "-Dfabric.addMods=${project.extraMods}"
-    }
+    into layout.buildDirectory.dir('libs')
 }
