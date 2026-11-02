@@ -1,4 +1,4 @@
-package dev.ncerdon.oldf3.render;
+package dev.ncerdon.speedrunport.f3;
 
 import org.junit.jupiter.api.Test;
 

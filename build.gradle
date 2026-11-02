@@ -57,8 +57,16 @@ tasks.named('compileJava') {
 fabricApi {
     configureTests {
         createSourceSet = true
-        modId = "old-f3-gametest"
+        modId = "speedrunport-gametest"
         enableGameTests = false
         enableClientGameTests = true
+    }
+}
+
+// Optional: -PextraMods="a.jar;b.jar" also loads those mod jars (e.g. Sodium) into runClient and
+// runClientGameTest, to check SpeedrunPort alongside them.
+tasks.matching { it.name in ['runClient', 'runClientGameTest'] }.configureEach {
+    if (project.hasProperty('extraMods')) {
+        jvmArgs "-Dfabric.addMods=${project.extraMods}"
     }
 }

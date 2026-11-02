@@ -1,4 +1,4 @@
-package dev.ncerdon.oldf3.render;
+package dev.ncerdon.speedrunport.f3;
 
 import net.minecraft.client.gui.components.debug.DebugScreenDisplayer;
 import net.minecraft.resources.Identifier;

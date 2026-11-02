@@ -1,13 +1,15 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "dev.ncerdon.oldf3.mixin",
+  "package": "dev.ncerdon.speedrunport.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
     "DebugScreenOverlayAccessor",
     "DebugScreenOverlayMixin",
     "KeyboardHandlerMixin",
-    "ProfilerPieChartMixin"
+    "MinecraftMixin",
+    "ProfilerPieChartMixin",
+    "WindowMixin"
   ],
   "injectors": { "defaultRequire": 1 }
 }

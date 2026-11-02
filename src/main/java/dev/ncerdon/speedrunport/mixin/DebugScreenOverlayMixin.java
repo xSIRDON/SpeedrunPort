@@ -1,13 +1,13 @@
-package dev.ncerdon.oldf3.mixin;
+package dev.ncerdon.speedrunport.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import dev.ncerdon.oldf3.OldF3Client;
-import dev.ncerdon.oldf3.render.ClassicGraphs;
-import dev.ncerdon.oldf3.render.LeftColumn;
-import dev.ncerdon.oldf3.render.LineCollector;
-import dev.ncerdon.oldf3.render.RightColumn;
+import dev.ncerdon.speedrunport.SpeedrunPortClient;
+import dev.ncerdon.speedrunport.f3.ClassicGraphs;
+import dev.ncerdon.speedrunport.f3.LeftColumn;
+import dev.ncerdon.speedrunport.f3.LineCollector;
+import dev.ncerdon.speedrunport.f3.RightColumn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -43,8 +43,8 @@ public abstract class DebugScreenOverlayMixin {
     @Shadow @Final private LocalSampleLogger frameTimeLogger;
     @Shadow @Final private LocalSampleLogger tickTimeLogger;
 
-    @Unique private final List<String> oldf3$otherModLines = new ArrayList<>();
-    @Unique private boolean oldf3$loggedFailure;
+    @Unique private final List<String> speedrunport$otherModLines = new ArrayList<>();
+    @Unique private boolean speedrunport$loggedFailure;
 
     @Shadow
     private @Nullable Level getLevel() {
@@ -68,44 +68,44 @@ public abstract class DebugScreenOverlayMixin {
     public abstract boolean showFpsCharts();
 
     @Inject(method = "extractRenderState", at = @At("HEAD"))
-    private void oldf3$resetOtherModLines(GuiGraphicsExtractor graphics, CallbackInfo ci) {
-        oldf3$otherModLines.clear();
+    private void speedrunport$resetOtherModLines(GuiGraphicsExtractor graphics, CallbackInfo ci) {
+        speedrunport$otherModLines.clear();
     }
 
     /** 1.16.1 always drew the full screen, even if every 26.3 entry is switched off in F3 + F6. */
     @ModifyExpressionValue(method = "extractRenderState",
             at = @At(value = "INVOKE", target = "Ljava/util/Collection;isEmpty()Z", ordinal = 0))
-    private boolean oldf3$drawWhileOverlayOpen(boolean noEntries) {
+    private boolean speedrunport$drawWhileOverlayOpen(boolean noEntries) {
         return noEntries && !minecraft.debugEntries.isOverlayVisible();
     }
 
     /** Vanilla's entries are replaced by our columns; other mods' entries still run, into the right column. */
     @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debug/DebugScreenEntry;display(Lnet/minecraft/client/gui/components/debug/DebugScreenDisplayer;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/chunk/LevelChunk;Lnet/minecraft/world/level/chunk/LevelChunk;)V"))
-    private void oldf3$replaceVanillaEntries(DebugScreenEntry entry, DebugScreenDisplayer displayer, @Nullable Level level,
+    private void speedrunport$replaceVanillaEntries(DebugScreenEntry entry, DebugScreenDisplayer displayer, @Nullable Level level,
                                              @Nullable LevelChunk clientChunk, @Nullable LevelChunk serverChunk,
                                              Operation<Void> original) {
         if (!minecraft.debugEntries.isOverlayVisible()) {
             original.call(entry, displayer, level, clientChunk, serverChunk);
         } else if (!entry.getClass().getName().startsWith("net.minecraft.")) {
-            original.call(entry, new LineCollector(oldf3$otherModLines), level, clientChunk, serverChunk);
+            original.call(entry, new LineCollector(speedrunport$otherModLines), level, clientChunk, serverChunk);
         }
     }
 
     @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;extractLines(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Ljava/util/List;ZI)V"))
-    private void oldf3$classicColumns(DebugScreenOverlay overlay, GuiGraphicsExtractor graphics, List<String> lines,
+    private void speedrunport$classicColumns(DebugScreenOverlay overlay, GuiGraphicsExtractor graphics, List<String> lines,
                                       boolean alignLeft, int screenWidth, Operation<Void> original) {
         if (minecraft.debugEntries.isOverlayVisible()) {
             try {
                 lines = alignLeft
                         ? LeftColumn.build(minecraft, getLevel(), getClientChunk(), getServerChunk(), showProfilerChart(), showFpsCharts())
-                        : RightColumn.build(minecraft, oldf3$otherModLines);
+                        : RightColumn.build(minecraft, speedrunport$otherModLines);
             } catch (RuntimeException e) {
                 // Fall back to vanilla's text for this frame rather than taking the HUD down.
-                if (!oldf3$loggedFailure) {
-                    oldf3$loggedFailure = true;
-                    OldF3Client.LOGGER.error("Failed to build the classic F3 column", e);
+                if (!speedrunport$loggedFailure) {
+                    speedrunport$loggedFailure = true;
+                    SpeedrunPortClient.LOGGER.error("Failed to build the classic F3 column", e);
                 }
             }
         }
@@ -114,7 +114,7 @@ public abstract class DebugScreenOverlayMixin {
 
     @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debugchart/FpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;III)V"))
-    private void oldf3$classicFrameGraph(FpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
+    private void speedrunport$classicFrameGraph(FpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
                                          Operation<Void> original) {
         // Vanilla passes min(242, screenWidth / 2); 1.16.1 used min(240, screenWidth / 2).
         ClassicGraphs.frameTimes(graphics, font, frameTimeLogger, left, Math.min(ClassicGraphs.MAX_WIDTH, width), bottom,
@@ -123,7 +123,7 @@ public abstract class DebugScreenOverlayMixin {
 
     @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debugchart/TpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;III)V"))
-    private void oldf3$classicTickGraph(TpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
+    private void speedrunport$classicTickGraph(TpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
                                         Operation<Void> original) {
         int screenWidth = left + width;
         int graphWidth = Math.min(ClassicGraphs.MAX_WIDTH, screenWidth / 2);

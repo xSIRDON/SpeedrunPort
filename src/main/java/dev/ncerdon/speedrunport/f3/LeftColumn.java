@@ -1,7 +1,7 @@
-package dev.ncerdon.oldf3.render;
+package dev.ncerdon.speedrunport.f3;
 
 import com.google.common.collect.Maps;
-import dev.ncerdon.oldf3.OldF3Keys;
+import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -253,7 +253,7 @@ public final class LeftColumn {
         lines.add("");
         lines.add("Debug: Pie [shift]: " + (pieVisible ? "visible" : "hidden")
                 + (hasServer ? " FPS + TPS" : " FPS") + " [alt]: " + (graphsVisible ? "visible" : "hidden"));
-        String help = OldF3Keys.combo(mc.options.keyDebugModifier, OldF3Keys.HELP);
+        String help = ClassicDebugKeys.combo(mc.options.keyDebugModifier, ClassicDebugKeys.HELP);
         if (help != null) {
             lines.add("For help: press " + help);
         }
@@ -282,7 +282,7 @@ public final class LeftColumn {
             section.run();
         } catch (RuntimeException e) {
             lines.subList(size, lines.size()).clear();
-            lines.add("[old-f3] " + e.getClass().getSimpleName());
+            lines.add("[SpeedrunPort] " + e.getClass().getSimpleName());
         }
     }
 }

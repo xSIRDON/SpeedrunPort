@@ -1,6 +1,6 @@
-package dev.ncerdon.oldf3.mixin;
+package dev.ncerdon.speedrunport.mixin;
 
-import dev.ncerdon.oldf3.render.ClassicPieChart;
+import dev.ncerdon.speedrunport.f3.ClassicPieChart;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.debugchart.ProfilerPieChart;
@@ -21,7 +21,7 @@ public abstract class ProfilerPieChartMixin {
     @Shadow private String profilerTreePath;
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
-    private void oldf3$classicPie(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight, CallbackInfo ci) {
+    private void speedrunport$classicPie(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight, CallbackInfo ci) {
         ci.cancel();
         if (profilerPieChartResults != null) {
             ClassicPieChart.render(graphics, font, profilerPieChartResults, profilerTreePath);

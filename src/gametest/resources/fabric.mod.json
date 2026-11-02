@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": "old-f3-gametest",
+  "id": "speedrunport-gametest",
   "version": "1.0.0",
-  "name": "Old F3 client game tests",
+  "name": "SpeedrunPort client game tests",
   "environment": "client",
   "entrypoints": {
-    "fabric-client-gametest": ["dev.ncerdon.oldf3.gametest.OldF3ClientGameTest"]
+    "fabric-client-gametest": ["dev.ncerdon.speedrunport.gametest.SpeedrunPortClientGameTest"]
   },
   "depends": {
-    "old-f3": "*",
+    "speedrunport": "*",
     "fabric-client-gametest-api-v1": "*"
   }
 }
