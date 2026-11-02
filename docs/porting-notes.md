@@ -81,3 +81,17 @@ Needs JDK 25 (Gradle 9.8.2, Loom 1.19.3).
   borderless key, saves screenshots to `build/run/clientGameTest/screenshots`
 - add `"-PextraMods=path/to/sodium.jar;path/to/lithium.jar"` to load other mods alongside (not
   Fabric API, that's already on the dev classpath)
+
+## StandardSettings
+
+Hooked at `Minecraft.doWorldLoad` HEAD when `newWorld` is true (both the create world screen and
+`createFreshLevel` go through it), so it runs before generation and the world preview already uses
+the standard options.
+
+Applying: `options.save()`, overlay the standard lines onto options.txt, `options.load()`,
+`options.save()`. That way vanilla's own parsing handles every option, key, volume and skin part,
+and only the lines in the file change. On-join values go in from `ClientPlayConnectionEvents.JOIN`.
+
+Careful in tests: `waitForChunksRender()` never finishes after render distance changes mid-join
+(it wants the whole square of the new distance), so the game test waits for one chunk past the
+old distance instead.

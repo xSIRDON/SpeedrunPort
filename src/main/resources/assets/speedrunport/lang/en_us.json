@@ -28,5 +28,12 @@
   "speedrunport.help.fps_charts": "FPS + TPS graphs (or hold Alt when opening F3)",
   "speedrunport.help.network_charts": "Network charts",
   "speedrunport.help.lightmap_texture": "Lightmap texture",
-  "speedrunport.help.improved_transparency": "Toggle improved transparency"
+  "speedrunport.help.improved_transparency": "Toggle improved transparency",
+
+  "speedrunport.standardsettings.missing": "StandardSettings: no standardoptions.txt yet. Use /standardsettings save to make one from your current settings.",
+  "speedrunport.standardsettings.on": "StandardSettings is on: %s settings are reset on every new world.",
+  "speedrunport.standardsettings.off": "StandardSettings is off (%s settings saved). Use /standardsettings on to turn it back on.",
+  "speedrunport.standardsettings.saved": "Saved %s settings as your standard settings to %s",
+  "speedrunport.standardsettings.applied": "Applied your standard settings.",
+  "speedrunport.standardsettings.error": "StandardSettings: %s"
 }
