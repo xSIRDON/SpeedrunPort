@@ -3,7 +3,7 @@
   "id": "old-f3",
   "version": "${version}",
   "name": "Old F3",
-  "description": "Replaces the F3 debug screen with the classic 1.16.1-style layout.",
+  "description": "Brings back the 1.16.1 F3 debug screen: the classic text columns, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance and the F3 + Q key list, all filled with live data.",
   "authors": ["ncerdon"],
   "license": "MIT",
   "environment": "client",
@@ -14,9 +14,9 @@
     { "config": "oldf3.mixins.json", "environment": "client" }
   ],
   "depends": {
-    "fabricloader": ">=0.16.0",
-    "minecraft": "*",
-    "java": ">=21",
-    "fabric-api": "*"
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-key-mapping-api-v1": "*"
   }
 }
