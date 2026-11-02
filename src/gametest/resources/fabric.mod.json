@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "old-f3-gametest",
+  "version": "1.0.0",
+  "name": "Old F3 client game tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["dev.ncerdon.oldf3.gametest.OldF3ClientGameTest"]
+  },
+  "depends": {
+    "old-f3": "*",
+    "fabric-client-gametest-api-v1": "*"
+  }
+}

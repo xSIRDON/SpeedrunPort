@@ -2,7 +2,12 @@
   "required": true,
   "minVersion": "0.8",
   "package": "dev.ncerdon.oldf3.mixin",
-  "compatibilityLevel": "JAVA_21",
-  "client": ["DebugHudMixin"],
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "DebugScreenOverlayAccessor",
+    "DebugScreenOverlayMixin",
+    "KeyboardHandlerMixin",
+    "ProfilerPieChartMixin"
+  ],
   "injectors": { "defaultRequire": 1 }
 }
