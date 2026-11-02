@@ -3,8 +3,11 @@ package dev.ncerdon.speedrunport.mixin;
 import com.mojang.blaze3d.platform.Window;
 import dev.ncerdon.speedrunport.SpeedrunPortClient;
 import dev.ncerdon.speedrunport.SpeedrunPortConfig;
+import dev.ncerdon.speedrunport.borderless.BorderlessBounds;
+import dev.ncerdon.speedrunport.borderless.BorderlessBounds.Rect;
 import dev.ncerdon.speedrunport.borderless.BorderlessWindow;
 import org.lwjgl.sdl.SDLError;
+import org.lwjgl.sdl.SDLStdinc;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.sdl.SDL_Rect;
 import org.lwjgl.system.MemoryStack;
@@ -16,9 +19,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Borderless window: an ordinary window with no decorations, exactly covering the monitor it is on.
- * Unlike 26.3's own non-exclusive fullscreen it is not padded 1px onto the next monitor, the game
+ * Borderless window: an ordinary window with no decorations covering the monitor it is on, plus one
+ * off-screen pixel so the driver never takes it over as fullscreen (see {@link BorderlessBounds}).
+ * Unlike 26.3's own non-exclusive fullscreen that pixel never lands on another monitor, the game
  * still treats it as a window (so tools can resize it), and turning it off restores the old window.
  */
 @Mixin(Window.class)
@@ -111,10 +119,33 @@ public abstract class WindowMixin implements BorderlessWindow {
                 SDLVideo.SDL_RestoreWindow(handle);
             }
             SDLVideo.SDL_SetWindowBordered(handle, false);
-            setWindowSizeAndPosition(bounds.x(), bounds.y(), bounds.w(), bounds.h());
+            Rect target = BorderlessBounds.padded(new Rect(bounds.x(), bounds.y(), bounds.w(), bounds.h()),
+                    speedrunport$otherMonitors(display, stack));
+            setWindowSizeAndPosition(target.x(), target.y(), target.width(), target.height());
             syncWindow();
             speedrunport$applied = true;
         }
+    }
+
+    @Unique
+    private static List<Rect> speedrunport$otherMonitors(int display, MemoryStack stack) {
+        List<Rect> others = new ArrayList<>();
+        IntBuffer displays = SDLVideo.SDL_GetDisplays();
+        if (displays == null) {
+            return others;
+        }
+        try {
+            SDL_Rect bounds = SDL_Rect.malloc(stack);
+            for (int i = 0; i < displays.remaining(); i++) {
+                int id = displays.get(i);
+                if (id != display && SDLVideo.SDL_GetDisplayBounds(id, bounds)) {
+                    others.add(new Rect(bounds.x(), bounds.y(), bounds.w(), bounds.h()));
+                }
+            }
+        } finally {
+            SDLStdinc.SDL_free(displays);
+        }
+        return others;
     }
 
     @Unique
