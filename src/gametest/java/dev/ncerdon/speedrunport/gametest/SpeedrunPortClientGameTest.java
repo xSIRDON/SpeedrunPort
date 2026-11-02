@@ -2,6 +2,8 @@ package dev.ncerdon.speedrunport.gametest;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.ncerdon.speedrunport.SpeedrunPortConfig;
+import dev.ncerdon.speedrunport.borderless.BorderlessBounds;
+import dev.ncerdon.speedrunport.borderless.BorderlessBounds.Rect;
 import dev.ncerdon.speedrunport.borderless.BorderlessToggle;
 import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import dev.ncerdon.speedrunport.f3.RightColumn;
@@ -11,11 +13,13 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import org.lwjgl.sdl.SDLStdinc;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.sdl.SDL_Rect;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -103,7 +107,7 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             input.pressKey(options -> options.keyDebugOverlay);
             context.waitTicks(2);
 
-            // Borderless window key: no border, exactly the monitor, then back to the old window.
+            // Borderless window key: no border, the monitor plus one off-screen pixel, then back to the old window.
             // (The test harness fakes window resize events, so this checks the real SDL window directly.)
             Rect windowed = context.computeOnClient(SpeedrunPortClientGameTest::windowRect);
             input.pressKey(BorderlessToggle.KEY);
@@ -111,8 +115,9 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             Rect monitor = context.computeOnClient(SpeedrunPortClientGameTest::monitorRect);
             Rect borderless = context.computeOnClient(SpeedrunPortClientGameTest::windowRect);
             check(context, mc -> !hasBorder(mc), "the borderless key removes the window border");
-            if (!borderless.equals(monitor)) {
-                throw new AssertionError("Borderless window should cover the monitor " + monitor + " but is " + borderless);
+            Rect expected = BorderlessBounds.padded(monitor, context.computeOnClient(SpeedrunPortClientGameTest::otherMonitorRects));
+            if (!borderless.equals(expected)) {
+                throw new AssertionError("Borderless window should be " + expected + " (monitor " + monitor + " plus one off-screen pixel) but is " + borderless);
             }
             check(context, mc -> SpeedrunPortConfig.borderlessWindow(), "borderless is remembered for next launch");
 
@@ -126,8 +131,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             check(context, mc -> !SpeedrunPortConfig.borderlessWindow(), "turning it off is remembered too");
         }
     }
-
-    private record Rect(int x, int y, int width, int height) {}
 
     private static Rect windowRect(Minecraft mc) {
         long handle = mc.getWindow().handle();
@@ -148,6 +151,26 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             SDLVideo.SDL_GetDisplayBounds(SDLVideo.SDL_GetDisplayForWindow(mc.getWindow().handle()), bounds);
             return new Rect(bounds.x(), bounds.y(), bounds.w(), bounds.h());
         }
+    }
+
+    private static List<Rect> otherMonitorRects(Minecraft mc) {
+        int current = SDLVideo.SDL_GetDisplayForWindow(mc.getWindow().handle());
+        List<Rect> others = new ArrayList<>();
+        IntBuffer displays = SDLVideo.SDL_GetDisplays();
+        if (displays == null) {
+            return others;
+        }
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            SDL_Rect bounds = SDL_Rect.malloc(stack);
+            for (int i = 0; i < displays.remaining(); i++) {
+                if (displays.get(i) != current && SDLVideo.SDL_GetDisplayBounds(displays.get(i), bounds)) {
+                    others.add(new Rect(bounds.x(), bounds.y(), bounds.w(), bounds.h()));
+                }
+            }
+        } finally {
+            SDLStdinc.SDL_free(displays);
+        }
+        return others;
     }
 
     private static boolean hasBorder(Minecraft mc) {
