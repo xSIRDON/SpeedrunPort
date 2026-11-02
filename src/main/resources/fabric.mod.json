@@ -4,7 +4,11 @@
   "version": "${version}",
   "name": "SpeedrunPort",
   "description": "Speedrun quality-of-life for 26.3: the 1.16.1 F3 screen (classic text, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance, F3 + Q key list) and a clean borderless window on its own key.",
-  "authors": ["ncerdon"],
+  "authors": ["xSIRDON"],
+  "contact": {
+    "sources": "https://github.com/xSIRDON/SpeedrunPort",
+    "issues": "https://github.com/xSIRDON/SpeedrunPort/issues"
+  },
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
