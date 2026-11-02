@@ -1,4 +1,4 @@
-package dev.ncerdon.oldf3.mixin;
+package dev.ncerdon.speedrunport.mixin;
 
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import org.spongepowered.asm.mixin.Mixin;
@@ -8,14 +8,14 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(DebugScreenOverlay.class)
 public interface DebugScreenOverlayAccessor {
     @Accessor("renderProfilerChart")
-    void oldf3$setRenderProfilerChart(boolean visible);
+    void speedrunport$setRenderProfilerChart(boolean visible);
 
     @Accessor("renderFpsCharts")
-    void oldf3$setRenderFpsCharts(boolean visible);
+    void speedrunport$setRenderFpsCharts(boolean visible);
 
     @Accessor("renderNetworkCharts")
-    void oldf3$setRenderNetworkCharts(boolean visible);
+    void speedrunport$setRenderNetworkCharts(boolean visible);
 
     @Accessor("renderLightmapTexture")
-    void oldf3$setRenderLightmapTexture(boolean visible);
+    void speedrunport$setRenderLightmapTexture(boolean visible);
 }

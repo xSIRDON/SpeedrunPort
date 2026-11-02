@@ -1,6 +1,6 @@
-package dev.ncerdon.oldf3.mixin;
+package dev.ncerdon.speedrunport.mixin;
 
-import dev.ncerdon.oldf3.OldF3Keys;
+import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.KeyEvent;
@@ -25,14 +25,14 @@ public abstract class KeyboardHandlerMixin {
     }
 
     @Inject(method = "handleDebugKeys", at = @At("TAIL"), cancellable = true)
-    private void oldf3$classicDebugKeys(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+    private void speedrunport$classicDebugKeys(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         boolean handled = false;
-        if (OldF3Keys.CYCLE_RENDER_DISTANCE.matches(event)) {
-            OldF3Keys.cycleRenderDistance(minecraft, oldf3$shift(event), message -> debugFeedbackComponent(message));
+        if (ClassicDebugKeys.CYCLE_RENDER_DISTANCE.matches(event)) {
+            ClassicDebugKeys.cycleRenderDistance(minecraft, speedrunport$shift(event), message -> debugFeedbackComponent(message));
             handled = true;
         }
-        if (OldF3Keys.HELP.matches(event)) {
-            OldF3Keys.showHelp(minecraft, message -> debugFeedbackComponent(message));
+        if (ClassicDebugKeys.HELP.matches(event)) {
+            ClassicDebugKeys.showHelp(minecraft, message -> debugFeedbackComponent(message));
             handled = true;
         }
         if (handled) {
@@ -47,22 +47,22 @@ public abstract class KeyboardHandlerMixin {
     @Inject(method = "keyPress", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debug/DebugScreenEntryList;toggleDebugOverlay()V",
             shift = At.Shift.AFTER))
-    private void oldf3$shiftAltCharts(long handle, int action, KeyEvent event, CallbackInfo ci) {
+    private void speedrunport$shiftAltCharts(long handle, int action, KeyEvent event, CallbackInfo ci) {
         boolean open = minecraft.debugEntries.isOverlayVisible();
         boolean graphs = open && (event.hasAltDown() || minecraft.hasAltDown());
         DebugScreenOverlayAccessor overlay = (DebugScreenOverlayAccessor) minecraft.getDebugOverlay();
-        overlay.oldf3$setRenderProfilerChart(open && oldf3$shift(event));
-        overlay.oldf3$setRenderFpsCharts(graphs);
+        overlay.speedrunport$setRenderProfilerChart(open && speedrunport$shift(event));
+        overlay.speedrunport$setRenderFpsCharts(graphs);
         if (graphs) {
             // Same exclusivity vanilla applies when F3 + 2 turns the graphs on.
-            overlay.oldf3$setRenderNetworkCharts(false);
-            overlay.oldf3$setRenderLightmapTexture(false);
+            overlay.speedrunport$setRenderNetworkCharts(false);
+            overlay.speedrunport$setRenderLightmapTexture(false);
         }
     }
 
     /** Like 1.16.1's Screen.hasShiftDown(): trust the key itself, not only the event's modifier flags. */
     @Unique
-    private boolean oldf3$shift(KeyEvent event) {
+    private boolean speedrunport$shift(KeyEvent event) {
         return event.hasShiftDown() || minecraft.hasShiftDown();
     }
 }

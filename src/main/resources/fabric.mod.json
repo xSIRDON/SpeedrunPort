@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "id": "old-f3",
+  "id": "speedrunport",
   "version": "${version}",
-  "name": "Old F3",
-  "description": "Brings back the 1.16.1 F3 debug screen: the classic text columns, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance and the F3 + Q key list, all filled with live data.",
+  "name": "SpeedrunPort",
+  "description": "Speedrun quality-of-life for 26.3: the 1.16.1 F3 screen (classic text, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance, F3 + Q key list) and a clean borderless window on its own key.",
   "authors": ["ncerdon"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.ncerdon.oldf3.OldF3Client"]
+    "client": ["dev.ncerdon.speedrunport.SpeedrunPortClient"]
   },
   "mixins": [
-    { "config": "oldf3.mixins.json", "environment": "client" }
+    { "config": "speedrunport.mixins.json", "environment": "client" }
   ],
   "depends": {
     "fabricloader": ">=0.19.3",

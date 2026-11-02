@@ -1,0 +1,32 @@
+{
+  "key.speedrunport.cycleRenderDistance": "Cycle Render Distance",
+  "key.speedrunport.help": "Show Debug Key List",
+  "key.speedrunport.borderlessWindow": "Toggle Borderless Window",
+
+  "speedrunport.debug.cycle_renderdistance.message": "Render Distance: %s",
+
+  "speedrunport.help.line": "%s = %s",
+  "speedrunport.help.reload_chunks": "Reload chunks",
+  "speedrunport.help.show_hitboxes": "Show hitboxes",
+  "speedrunport.help.copy_location": "Copy location as /tp command, hold %s to crash the game",
+  "speedrunport.help.clear_chat": "Clear chat",
+  "speedrunport.help.cycle_renderdistance": "Cycle render distance (Shift to invert)",
+  "speedrunport.help.chunk_boundaries": "Show chunk boundaries",
+  "speedrunport.help.advanced_tooltips": "Advanced tooltips",
+  "speedrunport.help.inspect": "Copy entity or block data to clipboard",
+  "speedrunport.help.creative_spectator": "Cycle previous gamemode <-> spectator",
+  "speedrunport.help.pause_focus": "Pause on lost focus",
+  "speedrunport.help.help": "Show this list",
+  "speedrunport.help.reload_resourcepacks": "Reload resource packs",
+  "speedrunport.help.pause": "Pause without pause menu (if pausing is possible)",
+  "speedrunport.help.gamemodes": "Open game mode switcher",
+  "speedrunport.help.profiling": "Start/stop profiling",
+  "speedrunport.help.dump_dynamic_textures": "Dump dynamic textures",
+  "speedrunport.help.dump_version": "Client version info",
+  "speedrunport.help.debug_options": "Edit debug options",
+  "speedrunport.help.profiling_chart": "Profiler pie chart (or hold Shift when opening F3)",
+  "speedrunport.help.fps_charts": "FPS + TPS graphs (or hold Alt when opening F3)",
+  "speedrunport.help.network_charts": "Network charts",
+  "speedrunport.help.lightmap_texture": "Lightmap texture",
+  "speedrunport.help.improved_transparency": "Toggle improved transparency"
+}
