@@ -92,42 +92,104 @@ public abstract class DebugScreenOverlayMixin {
         }
     }
 
-    @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
+    // extractLines and the charts lost their screen size arguments in 26.3 (it added "Debug GUI
+    // Scale"), so each hook has a handler per signature. Only the one that matches applies.
+
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;extractLines(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Ljava/util/List;ZI)V"))
     private void speedrunport$classicColumns(DebugScreenOverlay overlay, GuiGraphicsExtractor graphics, List<String> lines,
-                                      boolean alignLeft, int screenWidth, Operation<Void> original) {
-        if (minecraft.debugEntries.isOverlayVisible()) {
-            try {
-                lines = alignLeft
-                        ? LeftColumn.build(minecraft, getLevel(), getClientChunk(), getServerChunk(), showProfilerChart(), showFpsCharts())
-                        : RightColumn.build(minecraft, speedrunport$otherModLines);
-            } catch (RuntimeException e) {
-                // Fall back to vanilla's text for this frame rather than taking the HUD down.
-                if (!speedrunport$loggedFailure) {
-                    speedrunport$loggedFailure = true;
-                    SpeedrunPortClient.LOGGER.error("Failed to build the classic F3 column", e);
-                }
-            }
+                                             boolean alignLeft, int screenWidth, Operation<Void> original) {
+        if (!minecraft.debugEntries.isOverlayVisible()) {
+            original.call(overlay, graphics, lines, alignLeft, screenWidth);
+            return;
         }
-        original.call(overlay, graphics, lines, alignLeft, screenWidth);
+        speedrunport$pushGuiScale(graphics);
+        original.call(overlay, graphics, speedrunport$column(lines, alignLeft), alignLeft, graphics.guiWidth());
+        graphics.pose().popMatrix();
     }
 
-    @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;extractLines(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Ljava/util/List;Z)V"))
+    private void speedrunport$classicColumnsBefore26_3(DebugScreenOverlay overlay, GuiGraphicsExtractor graphics, List<String> lines,
+                                                       boolean alignLeft, Operation<Void> original) {
+        if (!minecraft.debugEntries.isOverlayVisible()) {
+            original.call(overlay, graphics, lines, alignLeft);
+            return;
+        }
+        speedrunport$pushGuiScale(graphics);
+        original.call(overlay, graphics, speedrunport$column(lines, alignLeft), alignLeft);
+        graphics.pose().popMatrix();
+    }
+
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debugchart/FpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;III)V"))
     private void speedrunport$classicFrameGraph(FpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
-                                         Operation<Void> original) {
-        // Vanilla passes min(242, screenWidth / 2); 1.16.1 used min(240, screenWidth / 2).
-        ClassicGraphs.frameTimes(graphics, font, frameTimeLogger, left, Math.min(ClassicGraphs.MAX_WIDTH, width), bottom,
-                minecraft.options.framerateLimit().get());
+                                                Operation<Void> original) {
+        speedrunport$frameGraph(graphics);
     }
 
-    @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/components/debugchart/FpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V"))
+    private void speedrunport$classicFrameGraphBefore26_3(FpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width,
+                                                          Operation<Void> original) {
+        speedrunport$frameGraph(graphics);
+    }
+
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debugchart/TpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;III)V"))
     private void speedrunport$classicTickGraph(TpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width, int bottom,
-                                        Operation<Void> original) {
-        int screenWidth = left + width;
-        int graphWidth = Math.min(ClassicGraphs.MAX_WIDTH, screenWidth / 2);
+                                               Operation<Void> original) {
+        speedrunport$tickGraph(graphics);
+    }
+
+    @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/components/debugchart/TpsDebugChart;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V"))
+    private void speedrunport$classicTickGraphBefore26_3(TpsDebugChart chart, GuiGraphicsExtractor graphics, int left, int width,
+                                                         Operation<Void> original) {
+        speedrunport$tickGraph(graphics);
+    }
+
+    @Unique
+    private List<String> speedrunport$column(List<String> vanillaLines, boolean alignLeft) {
+        try {
+            return alignLeft
+                    ? LeftColumn.build(minecraft, getLevel(), getClientChunk(), getServerChunk(), showProfilerChart(), showFpsCharts())
+                    : RightColumn.build(minecraft, speedrunport$otherModLines);
+        } catch (RuntimeException e) {
+            // Fall back to vanilla's text for this frame rather than taking the HUD down.
+            if (!speedrunport$loggedFailure) {
+                speedrunport$loggedFailure = true;
+                SpeedrunPortClient.LOGGER.error("Failed to build the classic F3 column", e);
+            }
+            return vanillaLines;
+        }
+    }
+
+    @Unique
+    private void speedrunport$frameGraph(GuiGraphicsExtractor graphics) {
+        speedrunport$pushGuiScale(graphics);
+        int graphWidth = Math.min(ClassicGraphs.MAX_WIDTH, graphics.guiWidth() / 2);
+        ClassicGraphs.frameTimes(graphics, font, frameTimeLogger, 0, graphWidth, graphics.guiHeight(),
+                minecraft.options.framerateLimit().get());
+        graphics.pose().popMatrix();
+    }
+
+    @Unique
+    private void speedrunport$tickGraph(GuiGraphicsExtractor graphics) {
+        speedrunport$pushGuiScale(graphics);
+        int graphWidth = Math.min(ClassicGraphs.MAX_WIDTH, graphics.guiWidth() / 2);
         float millisPerTick = minecraft.level != null ? minecraft.level.tickRateManager().millisecondsPerTick() : 50.0F;
-        ClassicGraphs.tickTimes(graphics, font, tickTimeLogger, screenWidth - graphWidth, graphWidth, bottom, millisPerTick);
+        ClassicGraphs.tickTimes(graphics, font, tickTimeLogger, graphics.guiWidth() - graphWidth, graphWidth, graphics.guiHeight(), millisPerTick);
+        graphics.pose().popMatrix();
+    }
+
+    /**
+     * 1.16.1 drew F3 at the normal GUI scale. 26.3 shrinks it by its "Debug GUI Scale" option (half
+     * the max scale by default), so undo that for the classic text and graphs.
+     */
+    @Unique
+    private static void speedrunport$pushGuiScale(GuiGraphicsExtractor graphics) {
+        graphics.pose().pushMatrix();
+        graphics.pose().identity();
     }
 }

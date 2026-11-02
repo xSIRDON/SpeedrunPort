@@ -3,7 +3,7 @@
   "id": "speedrunport",
   "version": "${version}",
   "name": "SpeedrunPort",
-  "description": "Speedrun quality-of-life for 26.3: the 1.16.1 F3 screen (classic text, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance, F3 + Q key list) a clean borderless window on its own key, and StandardSettings (options reset on every new world).",
+  "description": "Speedrun quality-of-life for Minecraft 26.x: the 1.16.1 F3 screen (classic text, Shift+F3 pie chart, Alt+F3 FPS/TPS graphs, F3 + F render distance, F3 + Q key list), a clean borderless window on its own key, and StandardSettings (options reset on every new world).",
   "authors": ["xSIRDON"],
   "contact": {
     "sources": "https://github.com/xSIRDON/SpeedrunPort",
@@ -19,7 +19,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
-    "minecraft": "~26.3",
+    "minecraft": "${minecraft_dependency}",
     "java": ">=25",
     "fabric-key-mapping-api-v1": "*",
     "fabric-command-api-v2": "*",

@@ -1,7 +1,7 @@
 package dev.ncerdon.speedrunport.f3;
 
 import com.google.common.collect.Maps;
-import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
+import dev.ncerdon.speedrunport.compat.Compat;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -18,7 +18,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.network.Connection;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
@@ -75,15 +74,15 @@ public final class LeftColumn {
                 + " (" + mc.getLaunchedVersion() + "/" + ClientBrandRetriever.getClientModName() + ")");
         lines.add(fpsLine(mc));
         addIfPresent(lines, serverLine(mc, level));
-        addIfPresent(lines, mc.levelExtractor.sectionStatistics());
-        addIfPresent(lines, mc.levelExtractor.entityStatistics());
+        addIfPresent(lines, Compat.sectionStatistics(mc));
+        addIfPresent(lines, Compat.entityStatistics(mc));
 
         if (clientLevel == null || camera == null) {
             addFooter(lines, mc, pieVisible, graphsVisible);
             return lines;
         }
 
-        lines.add("P: " + F3Format.particleTotal(mc.particleEngine.countParticles()) + ". T: " + clientLevel.getEntityCount());
+        lines.add("P: " + F3Format.particleTotal(Compat.particleCount(mc)) + ". T: " + clientLevel.getEntityCount());
         lines.add(clientLevel.gatherChunkSourceStats());
         BlockPos pos = camera.blockPosition();
 
@@ -114,9 +113,9 @@ public final class LeftColumn {
 
         guarded(lines, () -> addWorldInfo(lines, mc, clientLevel, level, serverLevel, clientChunk, serverChunk, pos));
 
-        List<Identifier> postEffects = mc.gameRenderer.getAppliedPostEffects();
+        List<String> postEffects = Compat.postEffects(mc);
         if (!postEffects.isEmpty()) {
-            lines.add("Shader: " + postEffects.stream().map(Identifier::toString).collect(Collectors.joining(", ")));
+            lines.add("Shader: " + String.join(", ", postEffects));
         }
         if (mc.player != null) {
             lines.add(mc.getSoundManager().getChannelDebugString()
@@ -188,7 +187,7 @@ public final class LeftColumn {
             if (spawnState != null) {
                 Object2IntMap<MobCategory> counts = spawnState.getMobCategoryCounts();
                 lines.add("SC: " + spawnState.getSpawnableChunkCount() + ", " + Stream.of(MobCategory.values())
-                        .map(category -> category.getDebugAbbreviation() + ": " + counts.getInt(category))
+                        .map(category -> Compat.mobCategoryAbbreviation(category) + ": " + counts.getInt(category))
                         .collect(Collectors.joining(", ")));
             } else {
                 lines.add("SC: N/A");

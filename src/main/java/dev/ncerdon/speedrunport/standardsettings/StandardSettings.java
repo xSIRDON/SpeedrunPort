@@ -1,6 +1,7 @@
 package dev.ncerdon.speedrunport.standardsettings;
 
 import dev.ncerdon.speedrunport.SpeedrunPortClient;
+import dev.ncerdon.speedrunport.compat.Compat;
 import dev.ncerdon.speedrunport.mixin.ProfilerPieChartAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.CameraType;
@@ -100,7 +101,7 @@ public final class StandardSettings {
         }
         if (mc.level == null) {
             autoPauseIn = -1;
-        } else if (autoPauseIn-- == 0 && mc.gui.screen() == null) {
+        } else if (autoPauseIn-- == 0 && Compat.screen(mc) == null) {
             mc.pauseGame(true);
         }
     }
@@ -157,8 +158,8 @@ public final class StandardSettings {
             mc.options.setCameraType(types[Math.floorMod(parseInt(perspective, 0), types.length)]);
         }
         String hideGui = standard.get(HIDE_GUI);
-        if (hideGui != null && mc.gui.hud.isHidden() != "true".equals(hideGui.strip())) {
-            mc.gui.hud.toggle();
+        if (hideGui != null) {
+            Compat.setHudHidden(mc, "true".equals(hideGui.strip()));
         }
     }
 
