@@ -1,10 +1,12 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'me.modmuss50.mod-publish-plugin' version "${publish_version}" apply false
 }
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'net.fabricmc.fabric-loom'
+    apply plugin: 'me.modmuss50.mod-publish-plugin'
 
     def mc = project.name
     def windowSrc = rootProject.file("platform/${project.window_platform}")
@@ -85,6 +87,33 @@ subprojects {
     tasks.matching { it.name in ['runClient', 'runClientGameTest'] }.configureEach {
         if (project.hasProperty('extraMods')) {
             jvmArgs "-Dfabric.addMods=${project.extraMods}"
+        }
+    }
+
+    publishMods {
+        def gameVersions = project.game_versions.split(',') as List
+        file = jar.archiveFile
+        displayName = "SpeedrunPort ${rootProject.mod_version} for ${mc}"
+        version = project.version.toString()
+        changelog = providers.gradleProperty('changelog').orElse("https://github.com/xSIRDON/SpeedrunPort/releases/tag/v${rootProject.mod_version}")
+        type = STABLE
+        modLoaders.add('fabric')
+        dryRun = providers.environmentVariable('MODRINTH_TOKEN').orNull == null || providers.environmentVariable('CURSEFORGE_TOKEN').orNull == null
+
+        modrinth {
+            projectId = rootProject.modrinth_id
+            accessToken = providers.environmentVariable('MODRINTH_TOKEN')
+            minecraftVersions.addAll(gameVersions)
+            requires('fabric-api')
+        }
+
+        curseforge {
+            projectId = rootProject.curseforge_id
+            accessToken = providers.environmentVariable('CURSEFORGE_TOKEN')
+            minecraftVersions.addAll(gameVersions)
+            client = true
+            server = false
+            requires('fabric-api')
         }
     }
 }
