@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class F3FormatTest {
-
     @Test
     void toMiB_truncatesToWholeMiB() {
         assertEquals(0L, F3Format.toMiB(0L));
@@ -27,20 +26,17 @@ class F3FormatTest {
 
     @Test
     void percent_canExceed100() {
-        // Mem line can briefly exceed 100% under GC pressure (total > max).
         assertEquals(200L, F3Format.percent(2048L, 1024L));
     }
 
     @Test
     void sampleHeight_matches116FrameScale() {
-        // A 60 FPS frame (16.67ms) is 30px; a 30 FPS frame is 60px.
         assertEquals(30, F3Format.sampleHeight(16_666_667L, 1000.0 / 60.0, 30));
         assertEquals(60, F3Format.sampleHeight(33_333_334L, 1000.0 / 60.0, 30));
     }
 
     @Test
     void sampleHeight_matches116TickScale() {
-        // A full 50ms tick fills the 60px graph; half a tick is half height.
         assertEquals(60, F3Format.sampleHeight(50_000_000L, 50.0, 60));
         assertEquals(30, F3Format.sampleHeight(25_000_000L, 50.0, 60));
     }
@@ -61,7 +57,6 @@ class F3FormatTest {
 
     @Test
     void barColor_blendsBetweenStops() {
-        // Halfway from green to yellow: red channel at 127, green stays 255.
         assertEquals(0xFF7FFF00, F3Format.barColor(25, 100));
     }
 

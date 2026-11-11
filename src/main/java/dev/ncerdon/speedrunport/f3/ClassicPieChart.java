@@ -14,7 +14,6 @@ import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
-// 1.16.1 shift+F3 pie chart
 public final class ClassicPieChart {
     private static final int RADIUS = 160;
     private static final int RIM = 10;
@@ -37,7 +36,6 @@ public final class ClassicPieChart {
         graphics.nextStratum();
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
-        // 1.16 drew this in raw window pixels, not gui scaled
         pose.identity();
         pose.scale(1.0F / window.getGuiScale());
 
@@ -84,7 +82,6 @@ public final class ClassicPieChart {
             float y = centerY - depth;
             if (step < segments) {
                 mesh.triangle(centerX, centerY, previousX, previousY, x, y, color);
-                // only the front half of the rim is visible
                 if (depth <= 0.0F && previousDepth <= 0.0F) {
                     mesh.quad(previousX, previousY, previousX, previousY + RIM, x, y + RIM, x, y, rimColor);
                 }

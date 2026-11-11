@@ -6,7 +6,6 @@ import net.minecraft.resources.Identifier;
 import java.util.Collection;
 import java.util.List;
 
-// collects lines from other mods' debug entries so we can tack them onto the right column
 public record LineCollector(List<String> lines) implements DebugScreenDisplayer {
     @Override
     public void addPriorityLine(String line) {

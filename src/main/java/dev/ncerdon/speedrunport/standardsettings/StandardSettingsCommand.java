@@ -12,7 +12,6 @@ import java.util.Map;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-// /standardsettings [save|apply|on|off]
 public final class StandardSettingsCommand {
     private StandardSettingsCommand() {}
 

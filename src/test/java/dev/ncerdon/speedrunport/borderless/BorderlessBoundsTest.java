@@ -17,7 +17,6 @@ class BorderlessBoundsTest {
 
     @Test
     void sideBySide_neverSpillsOntoTheOtherMonitor() {
-        // Two 1080p monitors next to each other: the top edge is free on both.
         Rect right = new Rect(1920, 0, 1920, 1080);
         assertEquals(new Rect(0, -1, 1920, 1081), BorderlessBounds.padded(PRIMARY, List.of(right)));
         assertEquals(new Rect(1920, -1, 1920, 1081), BorderlessBounds.padded(right, List.of(PRIMARY)));
@@ -38,7 +37,6 @@ class BorderlessBoundsTest {
 
     @Test
     void offsetNeighbourOnlyBlocksTheEdgeItTouches() {
-        // A smaller monitor sitting above the right half still blocks the top edge.
         Rect aboveRight = new Rect(1000, -768, 1366, 768);
         assertEquals(new Rect(0, 0, 1920, 1081), BorderlessBounds.padded(PRIMARY, List.of(aboveRight)));
     }

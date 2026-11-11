@@ -12,16 +12,11 @@ public final class BorderlessBounds {
 
     private BorderlessBounds() {}
 
-    // A window that covers the monitor exactly gets treated as real fullscreen by the driver, and
-    // always-on-top stuff (ninjabrain bot) stops showing over it. So make it 1px bigger than the
-    // monitor, sticking out of an edge that has no other monitor next to it (vanilla 26.3 always
-    // uses the right edge, which bleeds onto a second screen). Falls back to the exact monitor.
     public static Rect padded(Rect monitor, List<Rect> otherMonitors) {
         int x = monitor.x();
         int y = monitor.y();
         int w = monitor.width();
         int h = monitor.height();
-        // {strip the extra pixel would land on, window}: top, bottom, left, right
         List<Rect[]> edges = List.of(
                 new Rect[] {new Rect(x, y - 1, w, 1), new Rect(x, y - 1, w, h + 1)},
                 new Rect[] {new Rect(x, y + h, w, 1), new Rect(x, y, w, h + 1)},

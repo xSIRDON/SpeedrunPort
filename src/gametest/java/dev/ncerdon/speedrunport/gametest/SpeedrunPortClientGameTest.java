@@ -5,7 +5,6 @@ import dev.ncerdon.speedrunport.SpeedrunPortConfig;
 import dev.ncerdon.speedrunport.borderless.BorderlessBounds;
 import dev.ncerdon.speedrunport.borderless.BorderlessBounds.Rect;
 import dev.ncerdon.speedrunport.borderless.BorderlessToggle;
-import dev.ncerdon.speedrunport.compat.Compat;
 import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import dev.ncerdon.speedrunport.f3.RightColumn;
 import dev.ncerdon.speedrunport.standardsettings.StandardSettings;
@@ -26,21 +25,15 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Predicate;
 
-// Runs the real client through F3, the borderless key and StandardSettings, with screenshots.
-// ./gradlew :26.3:runClientGameTest (or :26.1: / :26.2:)
-// Shift/Alt are held with InputConstants codes because TestInput.holdShift()/holdAlt() send GLFW
-// codes, which are wrong on 26.3.
 public class SpeedrunPortClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         TestInput input = context.getInput();
         try {
-            // StandardSettings gets tested at the end, keep it out of the first world
             Files.deleteIfExists(StandardSettings.file());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        // small enough to fit on a 1080p screen with the title bar
         input.resizeWindow(1280, 720);
 
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
@@ -49,12 +42,9 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             singleplayer.getServer().runCommand("summon minecraft:cow ~4 ~ ~3");
             TestCompat.lookAt(context, -90.0F, 30.0F);
             context.waitTicks(20);
-            // the recipe toast covers the right column in screenshots
-            context.runOnClient(Compat::clearToasts);
-            // F3 should ignore 26.3's debug gui scale and match the normal gui scale
-            context.runOnClient(Compat::setDebugGuiScaleAuto);
+            context.runOnClient(TestCompat::clearToasts);
+            context.runOnClient(TestCompat::setDebugGuiScaleAuto);
 
-            // Plain F3: classic text columns, no charts.
             input.pressKey(options -> options.keyDebugOverlay);
             context.waitTicks(5);
             check(context, mc -> mc.debugEntries.isOverlayVisible(), "F3 opens the overlay");
@@ -66,7 +56,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             context.waitTicks(2);
             check(context, mc -> !mc.debugEntries.isOverlayVisible(), "F3 again closes the overlay");
 
-            // Shift+F3: the 1.16.1 profiler pie.
             input.holdKey(InputConstants.KEY_LSHIFT);
             input.pressKey(options -> options.keyDebugOverlay);
             input.releaseKey(InputConstants.KEY_LSHIFT);
@@ -76,7 +65,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             input.pressKey(options -> options.keyDebugOverlay);
             context.waitTicks(2);
 
-            // Alt+F3: the 1.16.1 FPS (left) and TPS (right) graphs.
             input.holdKey(InputConstants.KEY_LALT);
             input.pressKey(options -> options.keyDebugOverlay);
             input.releaseKey(InputConstants.KEY_LALT);
@@ -84,7 +72,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             check(context, mc -> overlay(mc).showFpsCharts() && !overlay(mc).showProfilerChart(), "Alt+F3 shows only the graphs");
             context.takeScreenshot("speedrunport-3-alt-f3-graphs");
 
-            // F3 + F and Shift+F3 + F: render distance up and back down, without closing the overlay.
             int before = context.computeOnClient(mc -> mc.options.renderDistance().get());
             input.holdKey(options -> options.keyDebugModifier);
             input.pressKey(ClassicDebugKeys.CYCLE_RENDER_DISTANCE);
@@ -107,7 +94,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
                 throw new AssertionError("Shift + F3 + F should lower render distance back to " + before + " but it is " + lowered);
             }
 
-            // F3 + Q: the key list in chat.
             input.holdKey(options -> options.keyDebugModifier);
             input.pressKey(ClassicDebugKeys.HELP);
             input.releaseKey(options -> options.keyDebugModifier);
@@ -116,8 +102,6 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             input.pressKey(options -> options.keyDebugOverlay);
             context.waitTicks(2);
 
-            // Borderless window key: no border, the monitor plus one off-screen pixel, then back to the old window.
-            // (the harness fakes resize events, so WindowProbe asks the real window)
             Rect windowed = context.computeOnClient(WindowProbe::windowRect);
             input.pressKey(BorderlessToggle.KEY);
             context.waitTicks(5);
@@ -140,14 +124,11 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             check(context, mc -> !SpeedrunPortConfig.borderlessWindow(), "turning it off is remembered too");
         }
 
-        // StandardSettings: a new world resets the options from config/standardoptions.txt.
         Path standardFile = StandardSettings.file();
         try {
             Files.write(standardFile, List.of("maxFps:90", "chunkborders:true", "renderDistanceOnWorldJoin:7"));
             context.runOnClient(mc -> mc.options.framerateLimit().set(200));
             try (TestSingleplayerContext standardWorld = context.worldBuilder().create()) {
-                // waitForChunksRender() never finishes after the render distance changes mid-join, so
-                // wait for a chunk past the old distance (5) instead
                 context.waitFor(mc -> mc.player != null && mc.level.getChunkSource()
                         .hasChunk(mc.player.chunkPosition().x() + 6, mc.player.chunkPosition().z()), 1200);
                 check(context, mc -> mc.options.framerateLimit().get() == 90, "the standard maxFps is applied to the new world");

@@ -4,7 +4,6 @@ import net.minecraft.client.gui.components.DebugScreenOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-// for shift/alt + F3
 @Mixin(DebugScreenOverlay.class)
 public interface DebugScreenOverlayAccessor {
     @Accessor("renderProfilerChart")

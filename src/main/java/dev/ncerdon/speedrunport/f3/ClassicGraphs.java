@@ -7,7 +7,6 @@ import net.minecraft.util.debugchart.TpsDebugDimensions;
 
 import java.util.function.IntToLongFunction;
 
-// 1.16.1 alt+F3 graphs: frame times bottom left, server tick times bottom right
 public final class ClassicGraphs {
     public static final int MAX_WIDTH = 240;
 
@@ -34,8 +33,6 @@ public final class ClassicGraphs {
 
     public static void tickTimes(GuiGraphicsExtractor graphics, Font font, SampleStorage ticks,
                                  int x, int width, int bottom, float millisPerTick) {
-        // 1.16 graphed the time spent in tick(), which is TICK_SERVER_METHOD. The full sample is the
-        // whole gap between ticks (idle included) so it would always be ~50ms.
         IntToLongFunction tickMethod = index -> ticks.get(index, TpsDebugDimensions.TICK_SERVER_METHOD.ordinal());
         Stats stats = bars(graphics, ticks, tickMethod, x, width, bottom, millisPerTick, HEIGHT, HEIGHT);
         guide(graphics, font, F3Format.ticksPerSecond(millisPerTick) + " TPS", x, width, bottom - HEIGHT);
@@ -53,7 +50,6 @@ public final class ClassicGraphs {
             long nanos = value.applyAsLong(first + i);
             stats.add(nanos / 1_000_000L);
             int height = F3Format.sampleHeight(nanos, targetMillis, pixelsAtTarget);
-            // lag spikes go above the box, same as 1.16
             if (height > 1) {
                 graphics.fill(x + i, bottom - height + 1, x + i + 1, bottom, F3Format.barColor(height, redHeight));
             }

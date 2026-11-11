@@ -39,10 +39,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// Left column: same lines, wording and order as 1.16.1, filled with live data.
 public final class LeftColumn {
     private static final Map<Heightmap.Types, String> HEIGHTMAP_NAMES = Maps.newEnumMap(Map.of(
             Heightmap.Types.WORLD_SURFACE_WG, "SW",
@@ -54,7 +54,6 @@ public final class LeftColumn {
 
     private LeftColumn() {}
 
-    // level is the integrated server's level in singleplayer, otherwise the client one
     public static List<String> build(Minecraft mc, @Nullable Level level, @Nullable LevelChunk clientChunk,
                                      @Nullable LevelChunk serverChunk, boolean pieVisible, boolean graphsVisible) {
         List<String> lines = new ArrayList<>();
@@ -117,7 +116,6 @@ public final class LeftColumn {
         return lines;
     }
 
-    // light, heightmaps, biome, local difficulty, mob caps
     private static void addWorldInfo(List<String> lines, Minecraft mc, ClientLevel clientLevel, @Nullable Level level,
                                      @Nullable ServerLevel serverLevel, @Nullable LevelChunk clientChunk,
                                      @Nullable LevelChunk serverChunk, BlockPos pos) {
@@ -142,28 +140,12 @@ public final class LeftColumn {
             lines.add("Server Light: (?? sky, ?? block)");
         }
 
-        StringBuilder heightmaps = new StringBuilder("CH");
-        for (Heightmap.Types type : Heightmap.Types.values()) {
-            if (type.sendToClient()) {
-                heightmaps.append(' ').append(HEIGHTMAP_NAMES.get(type)).append(": ")
-                        .append(clientChunk.getHeight(type, pos.getX(), pos.getZ()));
-            }
-        }
-        lines.add(heightmaps.toString());
-        heightmaps.setLength(0);
-        heightmaps.append("SH");
-        for (Heightmap.Types type : Heightmap.Types.values()) {
-            if (type.keepAfterWorldgen()) {
-                heightmaps.append(' ').append(HEIGHTMAP_NAMES.get(type)).append(": ")
-                        .append(serverChunk != null ? Integer.toString(serverChunk.getHeight(type, pos.getX(), pos.getZ())) : "??");
-            }
-        }
-        lines.add(heightmaps.toString());
+        lines.add(heightmaps("CH", Heightmap.Types::sendToClient, clientChunk, pos));
+        lines.add(heightmaps("SH", Heightmap.Types::keepAfterWorldgen, serverChunk, pos));
 
         if (clientLevel.isInsideBuildHeight(pos.getY())) {
             lines.add("Biome: " + biomeName(clientLevel.getBiome(pos)));
 
-            // server numbers if we have them, otherwise a guess from the client side (1.16 did the same)
             Level difficultyLevel = level != null ? level : clientLevel;
             long inhabitedTime = serverChunk != null ? serverChunk.getInhabitedTime() : 0L;
             float moonBrightness = serverLevel != null && serverChunk != null ? serverLevel.getMoonBrightness(pos) : 0.0F;
@@ -184,6 +166,17 @@ public final class LeftColumn {
                 lines.add("SC: N/A");
             }
         }
+    }
+
+    private static String heightmaps(String label, Predicate<Heightmap.Types> shown, @Nullable LevelChunk chunk, BlockPos pos) {
+        StringBuilder line = new StringBuilder(label);
+        for (Heightmap.Types type : Heightmap.Types.values()) {
+            if (shown.test(type)) {
+                line.append(' ').append(HEIGHTMAP_NAMES.get(type)).append(": ")
+                        .append(chunk != null ? Integer.toString(chunk.getHeight(type, pos.getX(), pos.getZ())) : "??");
+            }
+        }
+        return line.toString();
     }
 
     private static String fpsLine(Minecraft mc) {
@@ -216,7 +209,6 @@ public final class LeftColumn {
         return String.format(Locale.ROOT, "\"%s\" server%s, %.0f tx, %.0f rx", listener.serverBrand(), status, sent, received);
     }
 
-    // /tick freeze and sprint, which 1.16 didn't have
     private static String tickStatus(Minecraft mc, TickRateManager tickRate) {
         IntegratedServer server = mc.getSingleplayerServer();
         if (server != null && server.tickRateManager().isSprinting()) {
@@ -265,7 +257,6 @@ public final class LeftColumn {
         }
     }
 
-    // one broken data source shouldn't take the whole F3 down
     private static void guarded(List<String> lines, Runnable section) {
         int size = lines.size();
         try {

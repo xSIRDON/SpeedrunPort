@@ -1,6 +1,5 @@
 package dev.ncerdon.speedrunport.f3;
 
-// Plain math for the overlay and graphs, kept out of the MC classes so it can be unit tested.
 public final class F3Format {
     private static final long BYTES_PER_MIB = 1024L * 1024L;
 
@@ -18,7 +17,6 @@ public final class F3Format {
         return whole == 0L ? 0L : part * 100L / whole;
     }
 
-    // a sample that takes exactly targetMillis is pixelsAtTarget tall (60fps frame = 30px, 20tps tick = 60px)
     public static int sampleHeight(long nanos, double targetMillis, int pixelsAtTarget) {
         if (targetMillis <= 0.0) {
             return 0;
@@ -26,7 +24,6 @@ public final class F3Format {
         return (int) (nanos / 1_000_000.0 / targetMillis * pixelsAtTarget);
     }
 
-    // green -> yellow at half height -> red at redHeight
     public static int barColor(int height, int redHeight) {
         int clamped = Math.max(0, Math.min(height, redHeight));
         int yellowHeight = redHeight / 2;
@@ -52,7 +49,6 @@ public final class F3Format {
         return Math.max(min, Math.min(current + (reverse ? -1 : 1), max));
     }
 
-    // countParticles() gives a per-type breakdown ending in the total ("SO 16 T 16"), we only want the total
     public static String particleTotal(String breakdown) {
         String trimmed = breakdown.strip();
         String last = trimmed.substring(trimmed.lastIndexOf(' ') + 1);

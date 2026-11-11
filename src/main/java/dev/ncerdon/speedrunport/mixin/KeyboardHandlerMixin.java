@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// F3 + F, F3 + Q, shift/alt + F3, and the borderless key
 @Mixin(KeyboardHandler.class)
 public abstract class KeyboardHandlerMixin {
     @Shadow @Final private Minecraft minecraft;
@@ -43,7 +42,6 @@ public abstract class KeyboardHandlerMixin {
         }
     }
 
-    // like 1.16: shift + F3 opens it with the pie, alt + F3 with the graphs, plain F3 with neither
     @Inject(method = "keyPress", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debug/DebugScreenEntryList;toggleDebugOverlay()V",
             shift = At.Shift.AFTER))
@@ -54,13 +52,11 @@ public abstract class KeyboardHandlerMixin {
         overlay.speedrunport$setRenderProfilerChart(open && speedrunport$shift(event));
         overlay.speedrunport$setRenderFpsCharts(graphs);
         if (graphs) {
-            // vanilla does the same when F3 + 2 turns the graphs on
             overlay.speedrunport$setRenderNetworkCharts(false);
             overlay.speedrunport$setRenderLightmapTexture(false);
         }
     }
 
-    // works anywhere like F11, except with F3 held or in Controls (so it can still be rebound)
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     private void speedrunport$borderlessKey(long handle, int action, KeyEvent event, CallbackInfo ci) {
         if (action == 1 && handle == Compat.windowHandle(minecraft.getWindow())
@@ -72,7 +68,6 @@ public abstract class KeyboardHandlerMixin {
         }
     }
 
-    // check the actual key too, not just the event's modifier flags (1.16 did hasShiftDown())
     @Unique
     private boolean speedrunport$shift(KeyEvent event) {
         return event.hasShiftDown() || minecraft.hasShiftDown();

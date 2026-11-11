@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// standardoptions.txt: options.txt lines to force on every new world plus some extras. Same format as
-// the StandardSettings mod, including a file whose only line is a path to another one (so instances
-// can share a file).
 public final class StandardOptionsFile {
     public static final String FILE_NAME = "standardoptions.txt";
 
@@ -31,19 +28,16 @@ public final class StandardOptionsFile {
     public static final String AUTO_F3_ESC = "autoF3Esc";
     public static final String AUTO_F3_ESC_DELAY = "firstAutoF3EscDelay";
 
-    // not options.txt settings
     public static final Set<String> EXTRAS = Set.of(ENABLED, HITBOXES, CHUNK_BORDERS, PERSPECTIVE, HIDE_GUI,
             PIE_DIRECTORY, FOV_ON_JOIN, RENDER_DISTANCE_ON_JOIN, SIMULATION_DISTANCE_ON_JOIN,
             ENTITY_DISTANCE_ON_JOIN, GUI_SCALE_ON_JOIN, AUTO_F3_ESC, AUTO_F3_ESC_DELAY);
 
-    // per-install stuff, never forced
     public static final Set<String> NOT_SETTINGS = Set.of("version", "lastServer", "resourcePacks",
             "incompatibleResourcePacks", "tutorialStep", "joinedFirstServer", "skipMultiplayerWarning",
             "onboardAccessibility", "startedCleanly", "telemetryOptInExtra");
 
     private StandardOptionsFile() {}
 
-    // follows the one-line redirect if the file is one
     public static Path resolve(Path file) throws IOException {
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8).stream()
                 .filter(line -> !line.isBlank()).toList();
@@ -54,7 +48,6 @@ public final class StandardOptionsFile {
                     return target;
                 }
             } catch (InvalidPathException ignored) {
-                // just a key:value line, not a path
             }
         }
         return file;
@@ -81,7 +74,6 @@ public final class StandardOptionsFile {
         return lines;
     }
 
-    // writes through the redirect too
     public static void write(Path file, Map<String, String> values) throws IOException {
         Path target = Files.exists(file) ? resolve(file) : file;
         Files.createDirectories(target.toAbsolutePath().getParent());
@@ -94,7 +86,6 @@ public final class StandardOptionsFile {
         return settings;
     }
 
-    // keeps the extras from the old file, options.txt doesn't have those
     public static Map<String, String> fromCurrentOptions(Map<String, String> currentOptions, Map<String, String> previous) {
         Map<String, String> standard = settingsOnly(currentOptions);
         previous.forEach((key, value) -> {
@@ -109,7 +100,6 @@ public final class StandardOptionsFile {
         return !"false".equals(values.getOrDefault(ENABLED, "true").strip());
     }
 
-    // the file writes the pie path with dots, the profiler uses \u001e between sections
     public static String pieDirectoryToProfilerPath(String pieDirectory) {
         return pieDirectory.strip().replace('.', '\u001e');
     }

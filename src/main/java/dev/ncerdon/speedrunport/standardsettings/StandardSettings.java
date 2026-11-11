@@ -25,11 +25,9 @@ import java.util.function.Function;
 
 import static dev.ncerdon.speedrunport.standardsettings.StandardOptionsFile.*;
 
-// Resets options to config/standardoptions.txt on every new world. Does nothing until that file exists.
 public final class StandardSettings {
     private static final int DEFAULT_AUTO_F3_ESC_DELAY = 22;
 
-    // set when a new world is created, used up once the player joins that world
     private static @Nullable Map<String, String> pendingJoin;
     private static @Nullable Path pendingWorld;
     private static int autoPauseIn = -1;
@@ -53,7 +51,6 @@ public final class StandardSettings {
         }
     }
 
-    // runs before generation so the world preview already uses the standard settings
     public static void onNewWorld(Minecraft mc, Path worldFolder) {
         Map<String, String> standard = read();
         if (standard == null || !isEnabled(standard)) {
@@ -75,7 +72,6 @@ public final class StandardSettings {
         Path world = pendingWorld;
         pendingJoin = null;
         pendingWorld = null;
-        // if creating the world failed, don't apply the on-join stuff to whatever world gets joined next
         if (standard == null || !isWorld(mc, world)) {
             return;
         }
@@ -97,7 +93,6 @@ public final class StandardSettings {
         }
     }
 
-    // autoF3Esc
     public static void onTick(Minecraft mc) {
         if (autoPauseIn < 0) {
             return;
@@ -109,7 +104,6 @@ public final class StandardSettings {
         }
     }
 
-    // the on-join values only apply on the next new world
     public static boolean applyNow(Minecraft mc) throws IOException {
         Map<String, String> standard = read();
         if (standard == null) {
@@ -138,8 +132,6 @@ public final class StandardSettings {
         StandardOptionsFile.write(file(), standard);
     }
 
-    // Goes through vanilla's own options.txt loading so keys, volumes etc get parsed exactly like
-    // normal, and only the lines that are in the file change.
     private static void applySettings(Minecraft mc, Map<String, String> standard) throws IOException {
         mc.options.save();
         Map<String, String> merged = readOptionsFile(mc);
@@ -163,7 +155,6 @@ public final class StandardSettings {
         }
     }
 
-    // copy of the starting options in the world folder, for verification
     private static void writeSnapshot(Minecraft mc, Map<String, String> standard, Path worldFolder) throws IOException {
         Map<String, String> snapshot = settingsOnly(readOptionsFile(mc));
         standard.forEach((key, value) -> {
@@ -193,7 +184,6 @@ public final class StandardSettings {
 
     private static void setDebugRenderer(Minecraft mc, Identifier entry, @Nullable String value) {
         if (value != null) {
-            // always on so they show without F3 open, like 1.16
             mc.debugEntries.setStatus(entry,
                     "true".equals(value.strip()) ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
         }

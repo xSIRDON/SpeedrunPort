@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-// config/speedrunport.properties
 public final class SpeedrunPortConfig {
     private static final String BORDERLESS_WINDOW = "borderlessWindow";
 
@@ -30,7 +29,6 @@ public final class SpeedrunPortConfig {
         return FabricLoader.getInstance().getConfigDir().resolve("speedrunport.properties");
     }
 
-    // lazy because the window (which needs this) can be created before our client init runs
     private static Properties properties() {
         if (properties == null) {
             properties = new Properties();

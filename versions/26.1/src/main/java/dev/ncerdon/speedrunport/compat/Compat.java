@@ -25,9 +25,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 
-// Everything that differs between 26.x versions goes through here. This is the 26.1 - 26.1.2 one.
 public final class Compat {
-    // GLFW key codes (the window is GLFW before 26.3)
     public static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYSYM;
     public static final int KEY_F = InputConstants.KEY_F;
     public static final int KEY_Q = InputConstants.KEY_Q;
@@ -63,13 +61,11 @@ public final class Compat {
         return mc.particleEngine.countParticles();
     }
 
-    // only one post effect at a time before 26.3
     public static List<String> postEffects(Minecraft mc) {
         Identifier effect = mc.gameRenderer.currentPostEffect();
         return effect == null ? List.of() : List.of(effect.toString());
     }
 
-    // no abbreviations in 26.1 yet, its F3 just used the first letter
     public static String mobCategoryAbbreviation(MobCategory category) {
         return String.valueOf(Character.toUpperCase(category.getName().charAt(0)));
     }
@@ -86,14 +82,12 @@ public final class Compat {
                 device.getBackendName() + " " + device.getVersion());
     }
 
-    // IntRangeBase isn't public in 26.1 but IntRange is
     public static int @Nullable [] intRange(OptionInstance<Integer> option) {
         return option.values() instanceof OptionInstance.IntRange range
                 ? new int[] {range.minInclusive(), range.maxInclusive()}
                 : null;
     }
 
-    // no improved transparency key before 26.3
     public static @Nullable KeyMapping translucencyKey(Options options) {
         return null;
     }
@@ -126,12 +120,5 @@ public final class Compat {
         public TextureSetup textureSetup() {
             return TextureSetup.noTexture();
         }
-    }
-
-    // no "Debug GUI Scale" before 26.3
-    public static void setDebugGuiScaleAuto(Minecraft mc) {}
-
-    public static void clearToasts(Minecraft mc) {
-        mc.getToastManager().clear();
     }
 }

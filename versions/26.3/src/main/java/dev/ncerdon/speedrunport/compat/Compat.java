@@ -24,9 +24,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 
-// Everything that differs between 26.x versions goes through here. This is the 26.3 one.
 public final class Compat {
-    // 26.3 key mappings use SDL scancodes
     public static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYBOARD;
     public static final int KEY_F = 9;
     public static final int KEY_Q = 20;
@@ -76,7 +74,6 @@ public final class Compat {
         return DebugEntrySystemSpecs.getCpuInfo();
     }
 
-    // the three GPU lines from 1.16.1: display + vendor, renderer, api version
     public static List<String> gpuLines(Window window) {
         var device = RenderSystem.getDevice().getDeviceInfo();
         return List.of(
@@ -85,7 +82,6 @@ public final class Compat {
                 device.backendName() + " " + device.driverInfo().lines().findFirst().orElse(""));
     }
 
-    // {min, max} of a slider option, null if it isn't a plain int range
     public static int @Nullable [] intRange(OptionInstance<Integer> option) {
         return option.values() instanceof OptionInstance.IntRangeBase range
                 ? new int[] {range.minInclusive(), range.maxInclusive()}
@@ -124,14 +120,5 @@ public final class Compat {
         public TextureSetup textureSetup() {
             return TextureSetup.noTexture();
         }
-    }
-
-    // used by the game test
-    public static void setDebugGuiScaleAuto(Minecraft mc) {
-        mc.options.debugGuiScale().set(0);
-    }
-
-    public static void clearToasts(Minecraft mc) {
-        mc.gui.toastManager().clear();
     }
 }

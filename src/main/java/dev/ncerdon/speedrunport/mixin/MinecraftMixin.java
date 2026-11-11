@@ -16,7 +16,6 @@ import java.util.Optional;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
-    // every way of making a new world goes through here with newWorld = true
     @Inject(method = "doWorldLoad", at = @At("HEAD"))
     private void speedrunport$standardSettings(LevelStorageSource.LevelStorageAccess levelAccess, PackRepository packs,
                                                WorldStem worldStem, Optional<GameRules> gameRules, boolean newWorld,

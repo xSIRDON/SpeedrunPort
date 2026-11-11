@@ -15,7 +15,6 @@ public final class BorderlessToggle {
         BorderlessWindow window = (BorderlessWindow) (Object) mc.getWindow();
         boolean enable = !window.speedrunport$isBorderless();
         if (enable && mc.options.fullscreen().get()) {
-            // leave F11 fullscreen, the window goes borderless on the way out
             mc.options.fullscreen().set(false);
             mc.options.save();
         }

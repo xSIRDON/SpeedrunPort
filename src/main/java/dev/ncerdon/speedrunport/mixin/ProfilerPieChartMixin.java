@@ -14,14 +14,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// draws the pie the 1.16.1 way, profiling and number key navigation are still vanilla
 @Mixin(ProfilerPieChart.class)
 public abstract class ProfilerPieChartMixin {
     @Shadow @Final private Font font;
     @Shadow private @Nullable ProfileResults profilerPieChartResults;
     @Shadow private String profilerTreePath;
-
-    // 26.3 passes the screen size, older versions only the graphics
 
     @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V", require = 0,
             at = @At("HEAD"), cancellable = true)

@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-// F3 + F and F3 + Q, which 26.x removed. Normal key mappings in the Debug category so they can be rebound.
 public final class ClassicDebugKeys {
     public static final KeyMapping CYCLE_RENDER_DISTANCE = new KeyMapping(
             "key.speedrunport.cycleRenderDistance", Compat.KEYBOARD, Compat.KEY_F, KeyMapping.Category.DEBUG);
@@ -33,12 +32,10 @@ public final class ClassicDebugKeys {
         }
         int next = F3Format.stepRenderDistance(renderDistance.get(), reverse, min, max);
         renderDistance.set(next);
-        // save() also sends the new view distance to the server
         mc.options.save();
         feedback.accept(Component.translatable("speedrunport.debug.cycle_renderdistance.message", next));
     }
 
-    // 1.16.1's list in the same order, then the newer combos
     public static void showHelp(Minecraft mc, Consumer<Component> feedback) {
         Options options = mc.options;
         KeyMapping mod = options.keyDebugModifier;
@@ -78,7 +75,6 @@ public final class ClassicDebugKeys {
         }
     }
 
-    // "F3 + Q" using the actual bindings, null if the key is unbound
     public static @Nullable String combo(KeyMapping modifier, KeyMapping key) {
         return key.isUnbound() ? null : name(modifier) + " + " + name(key);
     }

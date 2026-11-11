@@ -23,9 +23,6 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-// Borderless window: a normal window with no decorations covering the monitor (+1px, see
-// BorderlessBounds). Unlike vanilla's borderless fullscreen the game still treats it as a window, so
-// resize macros work, and turning it off puts the old window back.
 @Mixin(Window.class)
 public abstract class WindowMixin implements BorderlessWindow {
     @Shadow @Final private long handle;
@@ -35,9 +32,7 @@ public abstract class WindowMixin implements BorderlessWindow {
     @Shadow private int windowedHeight;
     @Shadow private boolean fullscreen;
 
-    // what the player wants
     @Unique private boolean speedrunport$wanted;
-    // whether we actually made the window borderless (could be in F11 fullscreen on top of that)
     @Unique private boolean speedrunport$applied;
     @Unique private int speedrunport$restoreX;
     @Unique private int speedrunport$restoreY;
@@ -63,7 +58,6 @@ public abstract class WindowMixin implements BorderlessWindow {
         }
     }
 
-    // vanilla puts the border back when leaving F11, so redo it
     @Inject(method = "setMode", at = @At("TAIL"))
     private void speedrunport$reapplyAfterModeChange(CallbackInfo ci) {
         speedrunport$sync();
@@ -83,7 +77,7 @@ public abstract class WindowMixin implements BorderlessWindow {
     @Unique
     private void speedrunport$sync() {
         if (fullscreen) {
-            return; // Fullscreen owns the window; we catch up when it ends.
+            return;
         }
         if (speedrunport$wanted) {
             speedrunport$enter();
@@ -104,15 +98,15 @@ public abstract class WindowMixin implements BorderlessWindow {
                 SpeedrunPortClient.LOGGER.warn("Borderless window: could not read monitor bounds: {}", SDLError.SDL_GetError());
                 return;
             }
+            boolean maximized = (SDLVideo.SDL_GetWindowFlags(handle) & SDLVideo.SDL_WINDOW_MAXIMIZED) != 0;
             if (!speedrunport$applied) {
-                // vanilla keeps windowedX/Y/W/H current while not fullscreen
                 speedrunport$restoreX = windowedX;
                 speedrunport$restoreY = windowedY;
                 speedrunport$restoreWidth = windowedWidth;
                 speedrunport$restoreHeight = windowedHeight;
-                speedrunport$restoreMaximized = (SDLVideo.SDL_GetWindowFlags(handle) & SDLVideo.SDL_WINDOW_MAXIMIZED) != 0;
+                speedrunport$restoreMaximized = maximized;
             }
-            if ((SDLVideo.SDL_GetWindowFlags(handle) & SDLVideo.SDL_WINDOW_MAXIMIZED) != 0) {
+            if (maximized) {
                 SDLVideo.SDL_RestoreWindow(handle);
             }
             SDLVideo.SDL_SetWindowBordered(handle, false);

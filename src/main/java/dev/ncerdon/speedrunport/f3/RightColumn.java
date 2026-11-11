@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// Right column: system info, then whatever you're looking at, then lines from other mods.
 public final class RightColumn {
     private static final double TARGET_RANGE = 20.0;
 
@@ -74,7 +73,6 @@ public final class RightColumn {
             addTagsIfEnabled(mc, lines, DebugScreenEntries.LOOKING_AT_BLOCK_TAGS, state);
         }
 
-        // 1.16 raycasts again with fluids, so on a solid block this shows minecraft:empty
         HitResult fluidHit = camera.pick(TARGET_RANGE, 0.0F, true);
         if (fluidHit.getType() == HitResult.Type.BLOCK) {
             BlockPos pos = ((BlockHitResult) fluidHit).getBlockPos();
@@ -94,7 +92,6 @@ public final class RightColumn {
         }
     }
 
-    // blocks have dozens of tags now, so only show them when they're turned on in F3 + F6 like vanilla
     private static void addTagsIfEnabled(Minecraft mc, List<String> lines, Identifier entry, TypedInstance<?> state) {
         if (mc.debugEntries.isCurrentlyEnabled(entry)) {
             DebugEntryLookingAt.addTagEntries(lines, state);

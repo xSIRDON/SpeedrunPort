@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StandardOptionsFileTest {
-
     @Test
     void parse_splitsOnTheFirstColonOnly() {
         Map<String, String> values = StandardOptionsFile.parse(List.of(
