@@ -4,7 +4,7 @@ import net.minecraft.client.gui.components.DebugScreenOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** Lets the key handler flip the chart toggles the way Shift+F3 / Alt+F3 did in 1.16.1. */
+// for shift/alt + F3
 @Mixin(DebugScreenOverlay.class)
 public interface DebugScreenOverlayAccessor {
     @Accessor("renderProfilerChart")

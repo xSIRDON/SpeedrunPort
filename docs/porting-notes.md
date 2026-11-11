@@ -1,125 +1,62 @@
-# Porting notes (26.x)
+# porting notes
 
-Notes to self for the next version bump.
+stuff to remember for the next version bump
 
-26.x ships unobfuscated, so there are no Yarn mappings anymore, everything is Mojang names.
-`./gradlew genSources` and then read the sources jar in
-`.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-*/<version>/`.
+26.x is unobfuscated so it's all mojang names. `./gradlew genSources -Pminecraft_version=... -Pfabric_version=...`
+then the sources jar is in `.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-*/<version>/`
 
-## How 26.3 draws F3
+## F3
 
-`DebugScreenOverlay.extractRenderState`:
+`DebugScreenOverlay.extractRenderState` runs every enabled `DebugScreenEntry` into left/right lists
+and draws them with `extractLines`, then the charts and the pie.
 
-- gets the enabled entries from `minecraft.debugEntries` (in-overlay vs always-on is set in F3 + F6)
-- runs every `DebugScreenEntry.display(...)` into left/right/group lists
-- draws each column with the private `extractLines(graphics, lines, alignLeft, screenWidth)`
-- then the charts: `FpsDebugChart`, `TpsDebugChart` (F3 + 2), bandwidth/ping (F3 + 3),
-  lightmap (F3 + 4) and `ProfilerPieChart` (F3 + 1)
+- DebugScreenOverlayMixin wraps `extractLines` and swaps in LeftColumn/RightColumn, wraps the
+  fps/tps chart calls to draw ClassicGraphs, and skips vanilla entries while F3 is open (other mods'
+  entries still run and go at the bottom of the right column)
+- `Collection.isEmpty` ordinal 0 = the "no entries enabled" check, forced false while F3 is open
+- ProfilerPieChartMixin cancels at HEAD and draws ClassicPieChart
+- KeyboardHandlerMixin: F3+F / F3+Q at TAIL of `handleDebugKeys`, shift/alt right after
+  `toggleDebugOverlay()`, F12 at HEAD of `keyPress`
+- with F3 closed nothing is touched so "always on" entries still work
 
-Debug keys are `KeyMapping`s now (`options.keyDebugReloadChunk` etc), handled in
-`KeyboardHandler.handleDebugKeys`. Key codes are SDL scancodes: A = 4, F = 9, Q = 20, F3 = 60,
-F12 = 69. 26.3 removed F3 + F and F3 + Q.
+sodium 0.9 also hooks extractLines (fps percentiles, lost since we replace the left column) and adds
+its own entry (ends up in the right column)
 
-## Mixins
+- tick graph uses `TpsDebugDimensions.TICK_SERVER_METHOD`, the full sample includes idle so it's always ~50ms
+- `countParticles()` is a breakdown string, total is the last number
+- the GUI only does quads, ColoredMesh sends triangles as quads with the last corner repeated
+- text always draws over shapes in the same stratum, `nextStratum()` for a new layer
+- pie is in window pixels like 1.16 (pose identity, scale 1/guiScale)
 
-- `DebugScreenOverlayMixin`
-  - `Collection.isEmpty` (ordinal 0) in `extractRenderState`: keep drawing while F3 is open even
-    if every entry is turned off
-  - wraps `DebugScreenEntry.display`: skip vanilla entries while F3 is open, other mods' entries
-    go into a `LineCollector` (bottom of the right column)
-  - wraps `extractLines`: swap in `LeftColumn` / `RightColumn`
-  - wraps `FpsDebugChart` / `TpsDebugChart.extractRenderState`: draw `ClassicGraphs` instead
-- `ProfilerPieChartMixin`: cancel at HEAD and draw `ClassicPieChart`. Profiling and 0-9
-  navigation are still vanilla.
-- `KeyboardHandlerMixin`: F3 + F / F3 + Q at the TAIL of `handleDebugKeys`, and Shift/Alt
-  handling right after `toggleDebugOverlay()` in `keyPress`
-- `WindowMixin` + `MinecraftMixin`: borderless window, see below
+## borderless
 
-With F3 closed nothing is touched, so "always on" entries still work. Block/fluid tags only show
-when they're turned on in F3 + F6 (26.3 blocks have dozens of tags).
+vanilla 26.3 borderless (F11 + exclusive fullscreen off) is 1px wider than the monitor because an
+exact fit gets taken over by the nvidia gl driver and always-on-top windows (ninjabrain bot) vanish.
+but it always goes right, so it shows on a second monitor. ours picks an edge with nothing next to
+it (BorderlessBounds). has to be re-applied after leaving F11 since vanilla puts the border back.
 
-Sodium 0.9 also hooks the overlay. It inserts FPS percentiles right before the left
-`extractLines` (lost, since the left column gets replaced) and adds its own entry, which ends up
-at the bottom of the right column.
+## standardsettings
 
-## Data sources
+hooked at `Minecraft.doWorldLoad` HEAD when newWorld is true, before generation. applies by
+save -> overlay the lines onto options.txt -> load -> save, so vanilla parses everything. on-join
+values from `ClientPlayConnectionEvents.JOIN`, only if the joined world is the one just created.
 
-- tick graph: `tickTimeLogger` dimension `TpsDebugDimensions.TICK_SERVER_METHOD`. The full sample
-  is the whole gap between ticks (idle included), so it's always ~50ms.
-- frame graph: `frameTimeLogger`, one sample per frame
-- particle count: `countParticles()` is a per-type breakdown now, the total is the last number
-- Shift/Alt: check `minecraft.hasShiftDown()` too, not just the event's modifier flags
+`waitForChunksRender()` in game tests never finishes after the render distance changes mid-join,
+wait for one chunk past the old distance instead
 
-## Drawing
+## versions
 
-The GUI only takes quads. `ColoredMesh` sends triangles as quads with the last corner repeated,
-same winding as vanilla's filled rects, via `graphics.guiRenderState.addGuiElement(...)` with
-`RenderPipelines.GUI`. Text always draws over shapes in the same stratum; `nextStratum()` starts a
-new layer on top.
+`versions/26.1` (26.1 - 26.1.2), `versions/26.2`, `versions/26.3`, each just gradle.properties +
+Compat (+ TestCompat). window code in `platform/glfw` (26.1, 26.2) and `platform/sdl` (26.3+)
 
-The pie is drawn in window pixels (pose reset to identity, scaled by 1 / gui scale) like 1.16.1.
+what changed between them:
 
-## Borderless window
+- window: glfw until 26.3, sdl3 in 26.3. key codes too (F = 70 / Q = 81 / F12 = 301 vs SDL 9 / 20 / 69)
+- 26.1: `mc.screen`, `gui.getChat()`, `options.hideGui`, `levelRenderer.getSectionStatistics()`,
+  `GpuDevice.getVendor()`, no `handleGlobalKeyPress` (F11 is inline in keyPress)
+- before 26.3: `currentPostEffect()` instead of `getAppliedPostEffects()`, `RenderPipeline` in
+  `com.mojang.blaze3d.pipeline`, `extractLines` / charts / pie don't take the screen size
+  (handled with one handler per signature, require = 0), no debug gui scale
+- 26.1's fabric api has the older client gametest api (`getClientLevel()`, no `lookAt`)
 
-26.3's own borderless (F11 with exclusive fullscreen off) is a window 1px wider than the monitor
-(`BORDERLESS_FULLSCREEN_PADDING`) and the game treats it as fullscreen. The 1px exists because a
-window covering the monitor exactly gets taken over by the NVIDIA OpenGL driver, and then
-always-on-top windows (Ninjabrain Bot) don't show over it. But vanilla always pads to the right,
-so with a second monitor there you get a 1px strip on it.
-
-Ours stays a normal window: no border, monitor bounds plus 1px past an edge with no monitor next
-to it (`BorderlessBounds.padded`), old bounds + maximized state restored on exit, saved in
-`config/speedrunport.properties`, and re-applied after leaving F11 since vanilla puts the border
-back.
-
-## Building / testing
-
-Needs JDK 25 (Gradle 9.8.2, Loom 1.19.3).
-
-- `./gradlew build collectJars`: every version's jar + unit tests, jars copied to `build/libs`
-- `./gradlew :26.3:runClientGameTest` (or `:26.1:` / `:26.2:`): opens the game, makes a world, goes through the F3 combos and the
-  borderless key, saves screenshots to `versions/<mc>/build/run/clientGameTest/screenshots`
-- add `"-PextraMods=path/to/sodium.jar;path/to/lithium.jar"` to load other mods alongside (not
-  Fabric API, that's already on the dev classpath)
-
-## StandardSettings
-
-Hooked at `Minecraft.doWorldLoad` HEAD when `newWorld` is true (both the create world screen and
-`createFreshLevel` go through it), so it runs before generation and the world preview already uses
-the standard options.
-
-Applying: `options.save()`, overlay the standard lines onto options.txt, `options.load()`,
-`options.save()`. That way vanilla's own parsing handles every option, key, volume and skin part,
-and only the lines in the file change. On-join values go in from `ClientPlayConnectionEvents.JOIN`.
-
-Careful in tests: `waitForChunksRender()` never finishes after render distance changes mid-join
-(it wants the whole square of the new distance), so the game test waits for one chunk past the
-old distance instead.
-
-## Versions
-
-One build per Minecraft API: `versions/26.1` (covers 26.1 - 26.1.2), `versions/26.2`,
-`versions/26.3`. Everything shared lives in `src/`; a version folder only has its
-gradle.properties and a `Compat` class (plus `TestCompat` for the game test). The window code is in
-`platform/glfw` (26.1, 26.2) and `platform/sdl` (26.3+).
-
-What differs, so far:
-
-| | 26.1 | 26.2 | 26.3 |
-|---|---|---|---|
-| window | GLFW | GLFW | SDL3 |
-| key codes | GLFW (F = 70, Q = 81, F12 = 301) | GLFW | SDL scancodes (F = 9, Q = 20, F12 = 69) |
-| screen / chat / F1 | `mc.screen`, `gui.getChat()`, `options.hideGui` | `gui.screen()`, `gui.hud` | `gui.screen()`, `gui.hud` |
-| chunk / entity stats | `levelRenderer.getSectionStatistics()` | `levelExtractor.sectionStatistics()` | same as 26.2 |
-| post effects | `currentPostEffect()` | `currentPostEffect()` | `getAppliedPostEffects()` |
-| GPU info | `GpuDevice.getVendor()` etc. | `getDeviceInfo()` | `getDeviceInfo()` |
-| `RenderPipeline` | `com.mojang.blaze3d.pipeline` | same | `com.mojang.renderpearl.api.pipeline` |
-| `extractLines`, charts, pie | no screen size args | no screen size args | take screen size, plus "Debug GUI Scale" |
-| global keys | inline in `KeyboardHandler.keyPress` | `Minecraft.handleGlobalKeyPress` | same as 26.2 |
-
-The signature changes in the last rows are handled in the shared mixins with one handler per
-signature (`require = 0`), so only the matching one applies. The F12 key hooks
-`KeyboardHandler.keyPress` HEAD since that exists in every version.
-
-For a new version: `./gradlew genSources -P...`, compile against it, and copy the closest `versions/`
-folder.
+new version: genSources, compile against it, copy the closest `versions/` folder and fix what breaks

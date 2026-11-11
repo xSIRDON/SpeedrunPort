@@ -2,12 +2,6 @@ package dev.ncerdon.speedrunport.borderless;
 
 import java.util.List;
 
-/**
- * Where the borderless window goes. A window that covers a monitor exactly can be taken over by the
- * GPU driver as real fullscreen, and then always-on-top windows such as Ninjabrain Bot stop showing
- * over it. Growing it one pixel past an edge keeps it an ordinary window (26.3 does the same for its
- * own borderless mode, but always to the right, which shows on a monitor placed there).
- */
 public final class BorderlessBounds {
     public record Rect(int x, int y, int width, int height) {
         boolean intersects(Rect other) {
@@ -18,16 +12,16 @@ public final class BorderlessBounds {
 
     private BorderlessBounds() {}
 
-    /**
-     * The monitor grown by one pixel past the first edge (top, bottom, left, right) that no other
-     * monitor touches, so the extra pixel is never visible. If every edge has a neighbour, the
-     * monitor itself.
-     */
+    // A window that covers the monitor exactly gets treated as real fullscreen by the driver, and
+    // always-on-top stuff (ninjabrain bot) stops showing over it. So make it 1px bigger than the
+    // monitor, sticking out of an edge that has no other monitor next to it (vanilla 26.3 always
+    // uses the right edge, which bleeds onto a second screen). Falls back to the exact monitor.
     public static Rect padded(Rect monitor, List<Rect> otherMonitors) {
         int x = monitor.x();
         int y = monitor.y();
         int w = monitor.width();
         int h = monitor.height();
+        // {strip the extra pixel would land on, window}: top, bottom, left, right
         List<Rect[]> edges = List.of(
                 new Rect[] {new Rect(x, y - 1, w, 1), new Rect(x, y - 1, w, h + 1)},
                 new Rect[] {new Rect(x, y + h, w, 1), new Rect(x, y, w, h + 1)},

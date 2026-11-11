@@ -26,23 +26,21 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Predicate;
 
-/**
- * Drives the real client through the 1.16.1 F3 behaviour (saving a screenshot of each state) and
- * the borderless window key.
- * Run with {@code ./gradlew runClientGameTest}.
- * Shift and Alt are held by their SDL key codes: TestInput.holdShift()/holdAlt() still send GLFW codes.
- */
+// Runs the real client through F3, the borderless key and StandardSettings, with screenshots.
+// ./gradlew :26.3:runClientGameTest (or :26.1: / :26.2:)
+// Shift/Alt are held with InputConstants codes because TestInput.holdShift()/holdAlt() send GLFW
+// codes, which are wrong on 26.3.
 public class SpeedrunPortClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         TestInput input = context.getInput();
         try {
-            // StandardSettings is tested at the end; keep it out of the first world.
+            // StandardSettings gets tested at the end, keep it out of the first world
             Files.deleteIfExists(StandardSettings.file());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        // Small enough that the window plus its title bar fits on a 1920x1080 monitor.
+        // small enough to fit on a 1080p screen with the title bar
         input.resizeWindow(1280, 720);
 
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
@@ -51,10 +49,9 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             singleplayer.getServer().runCommand("summon minecraft:cow ~4 ~ ~3");
             TestCompat.lookAt(context, -90.0F, 30.0F);
             context.waitTicks(20);
-            // The "new recipes" toast would cover the top of the right column in the screenshots.
+            // the recipe toast covers the right column in screenshots
             context.runOnClient(Compat::clearToasts);
-            // "Auto" debug GUI scale (half the max) would draw vanilla's F3 smaller than the GUI;
-            // the classic F3 should still match the normal GUI scale in the screenshots.
+            // F3 should ignore 26.3's debug gui scale and match the normal gui scale
             context.runOnClient(Compat::setDebugGuiScaleAuto);
 
             // Plain F3: classic text columns, no charts.
@@ -120,7 +117,7 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             context.waitTicks(2);
 
             // Borderless window key: no border, the monitor plus one off-screen pixel, then back to the old window.
-            // (The test harness fakes window resize events, so this checks the real SDL window directly.)
+            // (the harness fakes resize events, so WindowProbe asks the real window)
             Rect windowed = context.computeOnClient(WindowProbe::windowRect);
             input.pressKey(BorderlessToggle.KEY);
             context.waitTicks(5);
@@ -149,8 +146,8 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
             Files.write(standardFile, List.of("maxFps:90", "chunkborders:true", "renderDistanceOnWorldJoin:7"));
             context.runOnClient(mc -> mc.options.framerateLimit().set(200));
             try (TestSingleplayerContext standardWorld = context.worldBuilder().create()) {
-                // Not waitForChunksRender(): it wants the full square of the new render distance, which
-                // never fills after the mid-join change. A chunk past the old distance (5) proves it took.
+                // waitForChunksRender() never finishes after the render distance changes mid-join, so
+                // wait for a chunk past the old distance (5) instead
                 context.waitFor(mc -> mc.player != null && mc.level.getChunkSource()
                         .hasChunk(mc.player.chunkPosition().x() + 6, mc.player.chunkPosition().z()), 1200);
                 check(context, mc -> mc.options.framerateLimit().get() == 90, "the standard maxFps is applied to the new world");

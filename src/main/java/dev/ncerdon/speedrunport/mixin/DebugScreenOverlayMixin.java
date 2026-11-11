@@ -31,11 +31,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * While the F3 overlay is open, swaps 26.3's per-entry text for the 1.16.1 columns and its charts
- * for the 1.16.1 graphs. When the overlay is closed (only "always on" entries showing), vanilla
- * runs untouched.
- */
+// While F3 is open, swap vanilla's entry text for the 1.16.1 columns and the charts for the 1.16.1
+// graphs. With F3 closed (only "always on" entries) vanilla is left alone.
 @Mixin(DebugScreenOverlay.class)
 public abstract class DebugScreenOverlayMixin {
     @Shadow @Final private Minecraft minecraft;
@@ -72,14 +69,14 @@ public abstract class DebugScreenOverlayMixin {
         speedrunport$otherModLines.clear();
     }
 
-    /** 1.16.1 always drew the full screen, even if every 26.3 entry is switched off in F3 + F6. */
+    // still draw F3 if every entry is turned off in F3 + F6
     @ModifyExpressionValue(method = "extractRenderState",
             at = @At(value = "INVOKE", target = "Ljava/util/Collection;isEmpty()Z", ordinal = 0))
     private boolean speedrunport$drawWhileOverlayOpen(boolean noEntries) {
         return noEntries && !minecraft.debugEntries.isOverlayVisible();
     }
 
-    /** Vanilla's entries are replaced by our columns; other mods' entries still run, into the right column. */
+    // skip vanilla's entries (we draw our own), other mods' entries still run and go in the right column
     @WrapOperation(method = "extractRenderState", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/debug/DebugScreenEntry;display(Lnet/minecraft/client/gui/components/debug/DebugScreenDisplayer;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/chunk/LevelChunk;Lnet/minecraft/world/level/chunk/LevelChunk;)V"))
     private void speedrunport$replaceVanillaEntries(DebugScreenEntry entry, DebugScreenDisplayer displayer, @Nullable Level level,
@@ -92,8 +89,8 @@ public abstract class DebugScreenOverlayMixin {
         }
     }
 
-    // extractLines and the charts lost their screen size arguments in 26.3 (it added "Debug GUI
-    // Scale"), so each hook has a handler per signature. Only the one that matches applies.
+    // extractLines and the charts got screen size args in 26.3, so there's a handler for each
+    // signature and only the matching one applies
 
     @WrapOperation(method = "extractRenderState", require = 0, at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;extractLines(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Ljava/util/List;ZI)V"))
@@ -156,7 +153,7 @@ public abstract class DebugScreenOverlayMixin {
                     ? LeftColumn.build(minecraft, getLevel(), getClientChunk(), getServerChunk(), showProfilerChart(), showFpsCharts())
                     : RightColumn.build(minecraft, speedrunport$otherModLines);
         } catch (RuntimeException e) {
-            // Fall back to vanilla's text for this frame rather than taking the HUD down.
+            // fall back to vanilla's text rather than taking the HUD down
             if (!speedrunport$loggedFailure) {
                 speedrunport$loggedFailure = true;
                 SpeedrunPortClient.LOGGER.error("Failed to build the classic F3 column", e);
@@ -183,10 +180,7 @@ public abstract class DebugScreenOverlayMixin {
         graphics.pose().popMatrix();
     }
 
-    /**
-     * 1.16.1 drew F3 at the normal GUI scale. 26.3 shrinks it by its "Debug GUI Scale" option (half
-     * the max scale by default), so undo that for the classic text and graphs.
-     */
+    // 26.3 shrinks F3 with its own "Debug GUI Scale" (half the max by default), go back to the normal GUI scale
     @Unique
     private static void speedrunport$pushGuiScale(GuiGraphicsExtractor graphics) {
         graphics.pose().pushMatrix();

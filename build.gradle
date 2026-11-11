@@ -2,8 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 }
 
-// Each versions/<mc> project builds the shared code in src/ together with its own small
-// compat class, plus the window code for the platform it runs on (glfw before 26.3, sdl after).
+// each versions/<mc> project = shared src/ + its own Compat + the glfw or sdl window code
 subprojects {
     apply plugin: 'java'
     apply plugin: 'net.fabricmc.fabric-loom'
@@ -23,7 +22,7 @@ subprojects {
         mavenCentral()
     }
 
-    // 26.x ships unobfuscated, so there is no mappings line: the code uses Mojang's own names.
+    // 26.x is unobfuscated, no mappings needed
     dependencies {
         minecraft "com.mojang:minecraft:${project.minecraft_version}"
         implementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
@@ -44,8 +43,7 @@ subprojects {
         }
     }
 
-    // Real-client tests: `./gradlew :26.3:runClientGameTest` opens the game, makes a test world,
-    // presses the F3 combos and saves screenshots to versions/<mc>/build/run/clientGameTest/screenshots.
+    // ./gradlew :26.3:runClientGameTest, screenshots end up in versions/<mc>/build/run/clientGameTest/screenshots
     fabricApi {
         configureTests {
             createSourceSet = true
@@ -87,8 +85,7 @@ subprojects {
         }
     }
 
-    // Optional: -PextraMods="a.jar;b.jar" also loads those mod jars (e.g. Sodium) into runClient and
-    // runClientGameTest, to check SpeedrunPort alongside them.
+    // -PextraMods="sodium.jar;lithium.jar" to test with other mods loaded
     tasks.matching { it.name in ['runClient', 'runClientGameTest'] }.configureEach {
         if (project.hasProperty('extraMods')) {
             jvmArgs "-Dfabric.addMods=${project.extraMods}"
@@ -96,7 +93,7 @@ subprojects {
     }
 }
 
-// `./gradlew collectJars` puts every version's jar in build/libs.
+// copies every version's jar to build/libs
 tasks.register('collectJars', Copy) {
     dependsOn subprojects.collect { "${it.path}:jar" }
     from(subprojects.collect { it.layout.buildDirectory.dir('libs') }) {

@@ -11,7 +11,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Asks GLFW directly about the real window, since the test harness fakes window size events. */
+// asks GLFW about the real window since the test harness fakes resize events
 final class WindowProbe {
     private WindowProbe() {}
 
@@ -28,7 +28,7 @@ final class WindowProbe {
         }
     }
 
-    /** The monitor holding the window's center, like the mod picks it. */
+    // monitor under the window's center, same as the mod
     static Rect monitorRect(Minecraft mc) {
         Rect window = windowRect(mc);
         int cx = window.x() + window.width() / 2;

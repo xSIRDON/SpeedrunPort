@@ -10,7 +10,9 @@ import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.LevelResource;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -23,15 +25,13 @@ import java.util.function.Function;
 
 import static dev.ncerdon.speedrunport.standardsettings.StandardOptionsFile.*;
 
-/**
- * Resets the options to {@code config/standardoptions.txt} whenever a new world is created, so
- * every run starts from the same settings. Does nothing until that file exists.
- */
+// Resets options to config/standardoptions.txt on every new world. Does nothing until that file exists.
 public final class StandardSettings {
     private static final int DEFAULT_AUTO_F3_ESC_DELAY = 22;
 
-    /** The standard file of the world being created, waiting for the player to join it. */
+    // set when a new world is created, used up once the player joins that world
     private static @Nullable Map<String, String> pendingJoin;
+    private static @Nullable Path pendingWorld;
     private static int autoPauseIn = -1;
 
     private StandardSettings() {}
@@ -40,7 +40,6 @@ public final class StandardSettings {
         return FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
     }
 
-    /** The standard file, or null when there isn't one (or it can't be read). */
     public static @Nullable Map<String, String> read() {
         Path file = file();
         if (!Files.exists(file)) {
@@ -54,7 +53,7 @@ public final class StandardSettings {
         }
     }
 
-    /** Start of loading a brand new world: before generation, so the world preview already uses them. */
+    // runs before generation so the world preview already uses the standard settings
     public static void onNewWorld(Minecraft mc, Path worldFolder) {
         Map<String, String> standard = read();
         if (standard == null || !isEnabled(standard)) {
@@ -65,6 +64,7 @@ public final class StandardSettings {
             applyExtras(mc, standard);
             writeSnapshot(mc, standard, worldFolder);
             pendingJoin = standard;
+            pendingWorld = worldFolder;
         } catch (IOException | RuntimeException e) {
             SpeedrunPortClient.LOGGER.error("StandardSettings: could not apply {}", file(), e);
         }
@@ -72,8 +72,11 @@ public final class StandardSettings {
 
     public static void onJoin(Minecraft mc) {
         Map<String, String> standard = pendingJoin;
+        Path world = pendingWorld;
         pendingJoin = null;
-        if (standard == null) {
+        pendingWorld = null;
+        // if creating the world failed, don't apply the on-join stuff to whatever world gets joined next
+        if (standard == null || !isWorld(mc, world)) {
             return;
         }
         Options options = mc.options;
@@ -94,7 +97,7 @@ public final class StandardSettings {
         }
     }
 
-    /** autoF3Esc: pause without the menu (F3 + Esc) a few ticks after joining. */
+    // autoF3Esc
     public static void onTick(Minecraft mc) {
         if (autoPauseIn < 0) {
             return;
@@ -106,7 +109,7 @@ public final class StandardSettings {
         }
     }
 
-    /** Applies the standard options right now (the on-join values wait for the next new world). */
+    // the on-join values only apply on the next new world
     public static boolean applyNow(Minecraft mc) throws IOException {
         Map<String, String> standard = read();
         if (standard == null) {
@@ -117,7 +120,6 @@ public final class StandardSettings {
         return true;
     }
 
-    /** Makes the current options (and the pie chart's current path) the new standard. */
     public static Map<String, String> saveCurrent(Minecraft mc) throws IOException {
         mc.options.save();
         Map<String, String> previous = Files.exists(file()) ? StandardOptionsFile.read(file()) : Map.of();
@@ -136,10 +138,8 @@ public final class StandardSettings {
         StandardOptionsFile.write(file(), standard);
     }
 
-    /**
-     * Runs the standard lines through the game's own options.txt loading, so every option, key,
-     * volume and skin layer is parsed exactly like vanilla. Only the lines in the file change.
-     */
+    // Goes through vanilla's own options.txt loading so keys, volumes etc get parsed exactly like
+    // normal, and only the lines that are in the file change.
     private static void applySettings(Minecraft mc, Map<String, String> standard) throws IOException {
         mc.options.save();
         Map<String, String> merged = readOptionsFile(mc);
@@ -163,7 +163,7 @@ public final class StandardSettings {
         }
     }
 
-    /** Copies the options the world started with into its folder, like StandardSettings does for verification. */
+    // copy of the starting options in the world folder, for verification
     private static void writeSnapshot(Minecraft mc, Map<String, String> standard, Path worldFolder) throws IOException {
         Map<String, String> snapshot = settingsOnly(readOptionsFile(mc));
         standard.forEach((key, value) -> {
@@ -175,6 +175,15 @@ public final class StandardSettings {
         Files.write(worldFolder.resolve(FILE_NAME), format(snapshot), StandardCharsets.UTF_8);
     }
 
+    private static boolean isWorld(Minecraft mc, @Nullable Path world) {
+        IntegratedServer server = mc.getSingleplayerServer();
+        if (server == null || world == null) {
+            return false;
+        }
+        return server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize()
+                .equals(world.toAbsolutePath().normalize());
+    }
+
     private static Map<String, String> readOptionsFile(Minecraft mc) throws IOException {
         Path options = mc.options.getFile().toPath();
         return Files.exists(options)
@@ -184,7 +193,7 @@ public final class StandardSettings {
 
     private static void setDebugRenderer(Minecraft mc, Identifier entry, @Nullable String value) {
         if (value != null) {
-            // Always on, so they show with F3 closed like they did in 1.16.
+            // always on so they show without F3 open, like 1.16
             mc.debugEntries.setStatus(entry,
                     "true".equals(value.strip()) ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
         }

@@ -24,9 +24,9 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 
-/** The calls that differ between 26.x versions; this is the 26.2 one. */
+// Everything that differs between 26.x versions goes through here. This is the 26.2 one.
 public final class Compat {
-    /** Before 26.3 the window is GLFW, so key mappings store GLFW key codes. */
+    // GLFW key codes (the window is GLFW before 26.3)
     public static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYSYM;
     public static final int KEY_F = InputConstants.KEY_F;
     public static final int KEY_Q = InputConstants.KEY_Q;
@@ -64,7 +64,7 @@ public final class Compat {
         return mc.particleEngine.countParticles();
     }
 
-    /** Only one post effect at a time before 26.3. */
+    // only one post effect at a time before 26.3
     public static List<String> postEffects(Minecraft mc) {
         Identifier effect = mc.gameRenderer.currentPostEffect();
         return effect == null ? List.of() : List.of(effect.toString());
@@ -92,7 +92,7 @@ public final class Compat {
                 : null;
     }
 
-    /** No improved-transparency key before 26.3. */
+    // no improved transparency key before 26.3
     public static @Nullable KeyMapping translucencyKey(Options options) {
         return null;
     }
@@ -127,7 +127,7 @@ public final class Compat {
         }
     }
 
-    /** There's no "Debug GUI Scale" before 26.3; F3 always uses the GUI scale. */
+    // no "Debug GUI Scale" before 26.3
     public static void setDebugGuiScaleAuto(Minecraft mc) {}
 
     public static void clearToasts(Minecraft mc) {

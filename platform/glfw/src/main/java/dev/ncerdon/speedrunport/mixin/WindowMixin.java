@@ -21,11 +21,8 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Borderless window on the GLFW window (26.1 and 26.2): an ordinary undecorated window covering the
- * monitor it is on, plus one off-screen pixel so the driver never takes it over as fullscreen (see
- * {@link BorderlessBounds}). Turning it off restores the old window.
- */
+// Borderless window for the GLFW window (26.1, 26.2). Same idea as the SDL one: no decorations,
+// covers the monitor (+1px, see BorderlessBounds), and puts the old window back when turned off.
 @Mixin(Window.class)
 public abstract class WindowMixin implements BorderlessWindow {
     @Shadow @Final private long handle;
@@ -34,9 +31,9 @@ public abstract class WindowMixin implements BorderlessWindow {
     @Shadow private int windowedWidth;
     @Shadow private int windowedHeight;
 
-    /** What the player asked for. */
+    // what the player wants
     @Unique private boolean speedrunport$wanted;
-    /** Whether the window is currently in our borderless state (it may be in fullscreen on top of it). */
+    // whether we actually made the window borderless (could be in F11 fullscreen on top of that)
     @Unique private boolean speedrunport$applied;
     @Unique private int speedrunport$restoreX;
     @Unique private int speedrunport$restoreY;
@@ -51,7 +48,7 @@ public abstract class WindowMixin implements BorderlessWindow {
         }
     }
 
-    /** Coming back from F11 fullscreen, vanilla resets the window; put the borderless state back on top. */
+    // vanilla resets the window when leaving F11, so redo it
     @Inject(method = "setMode", at = @At("TAIL"))
     private void speedrunport$reapplyAfterModeChange(CallbackInfo ci) {
         speedrunport$sync();
@@ -92,7 +89,7 @@ public abstract class WindowMixin implements BorderlessWindow {
 
         boolean maximized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_MAXIMIZED) == GLFW.GLFW_TRUE;
         if (!speedrunport$applied) {
-            // Vanilla keeps the windowed bounds up to date while not fullscreen; remember them for later.
+            // vanilla keeps windowedX/Y/W/H current while not fullscreen
             speedrunport$restoreX = windowedX;
             speedrunport$restoreY = windowedY;
             speedrunport$restoreWidth = windowedWidth;
@@ -119,7 +116,7 @@ public abstract class WindowMixin implements BorderlessWindow {
         speedrunport$applied = false;
     }
 
-    /** The monitor holding the window's center (GLFW has no "display for window" call). */
+    // monitor under the window's center, glfw doesn't have a "display for window" call
     @Unique
     private Rect speedrunport$monitorOfWindow(List<Rect> monitors) {
         try (MemoryStack stack = MemoryStack.stackPush()) {

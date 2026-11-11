@@ -14,10 +14,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * The 1.16.1 Shift+F3 profiler pie: a 320x160 tilted disc with a 10px rim, laid out in raw
- * window pixels in the bottom-right corner, with no backdrop and shadowed labels.
- */
+// 1.16.1 shift+F3 pie chart
 public final class ClassicPieChart {
     private static final int RADIUS = 160;
     private static final int RIM = 10;
@@ -40,7 +37,7 @@ public final class ClassicPieChart {
         graphics.nextStratum();
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
-        // 1.16.1 drew the pie in window pixels, so it ignores the GUI scale.
+        // 1.16 drew this in raw window pixels, not gui scaled
         pose.identity();
         pose.scale(1.0F / window.getGuiScale());
 
@@ -74,7 +71,6 @@ public final class ClassicPieChart {
         pose.popMatrix();
     }
 
-    /** One wedge of the disc plus, where it faces the viewer, its darker rim. */
     private static void addSlice(ColoredMesh mesh, int centerX, int centerY, double startPercent, double percent, int color) {
         int segments = Mth.floor(percent / 4.0) + 1;
         int rimColor = 0xFF000000 | (color >> 1 & 0x7F7F7F);
@@ -88,7 +84,7 @@ public final class ClassicPieChart {
             float y = centerY - depth;
             if (step < segments) {
                 mesh.triangle(centerX, centerY, previousX, previousY, x, y, color);
-                // Only the near half of the rim is visible, as in 1.16.1.
+                // only the front half of the rim is visible
                 if (depth <= 0.0F && previousDepth <= 0.0F) {
                     mesh.quad(previousX, previousY, previousX, previousY + RIM, x, y + RIM, x, y, rimColor);
                 }

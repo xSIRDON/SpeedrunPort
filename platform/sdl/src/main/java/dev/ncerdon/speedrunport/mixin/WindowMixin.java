@@ -23,12 +23,9 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Borderless window: an ordinary window with no decorations covering the monitor it is on, plus one
- * off-screen pixel so the driver never takes it over as fullscreen (see {@link BorderlessBounds}).
- * Unlike 26.3's own non-exclusive fullscreen that pixel never lands on another monitor, the game
- * still treats it as a window (so tools can resize it), and turning it off restores the old window.
- */
+// Borderless window: a normal window with no decorations covering the monitor (+1px, see
+// BorderlessBounds). Unlike vanilla's borderless fullscreen the game still treats it as a window, so
+// resize macros work, and turning it off puts the old window back.
 @Mixin(Window.class)
 public abstract class WindowMixin implements BorderlessWindow {
     @Shadow @Final private long handle;
@@ -38,9 +35,9 @@ public abstract class WindowMixin implements BorderlessWindow {
     @Shadow private int windowedHeight;
     @Shadow private boolean fullscreen;
 
-    /** What the player asked for. */
+    // what the player wants
     @Unique private boolean speedrunport$wanted;
-    /** Whether the window is currently in our borderless state (it may be in fullscreen on top of it). */
+    // whether we actually made the window borderless (could be in F11 fullscreen on top of that)
     @Unique private boolean speedrunport$applied;
     @Unique private int speedrunport$restoreX;
     @Unique private int speedrunport$restoreY;
@@ -66,7 +63,7 @@ public abstract class WindowMixin implements BorderlessWindow {
         }
     }
 
-    /** Coming back from F11 fullscreen, vanilla puts the border back; put the borderless state back on top. */
+    // vanilla puts the border back when leaving F11, so redo it
     @Inject(method = "setMode", at = @At("TAIL"))
     private void speedrunport$reapplyAfterModeChange(CallbackInfo ci) {
         speedrunport$sync();
@@ -108,7 +105,7 @@ public abstract class WindowMixin implements BorderlessWindow {
                 return;
             }
             if (!speedrunport$applied) {
-                // Vanilla keeps the windowed bounds up to date while not fullscreen; remember them for later.
+                // vanilla keeps windowedX/Y/W/H current while not fullscreen
                 speedrunport$restoreX = windowedX;
                 speedrunport$restoreY = windowedY;
                 speedrunport$restoreWidth = windowedWidth;

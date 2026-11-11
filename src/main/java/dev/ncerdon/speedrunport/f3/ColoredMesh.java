@@ -7,10 +7,8 @@ import org.joml.Matrix3x2f;
 
 import java.util.Arrays;
 
-/**
- * Untextured colored triangles and quads for the GUI layer. 26.3's GUI only draws quads, so a
- * triangle is sent as a quad with its last corner repeated.
- */
+// Colored triangles/quads for the GUI. The GUI pipeline only does quads, so a triangle is a quad
+// with the last corner repeated.
 public final class ColoredMesh {
     private float[] positions = new float[256];
     private int[] colors = new int[128];
@@ -24,9 +22,8 @@ public final class ColoredMesh {
         quad(ax, ay, bx, by, cx, cy, cx, cy, color);
     }
 
-    /** Corners in order around the edge; either direction works. */
     public void quad(float ax, float ay, float bx, float by, float cx, float cy, float dx, float dy, int color) {
-        // Match the corner order vanilla uses for filled rectangles so nothing is culled as a back face.
+        // same winding as vanilla fill() so it doesn't get culled
         if (cross(ax, ay, bx, by, cx, cy) > 0.0F || cross(ax, ay, cx, cy, dx, dy) > 0.0F) {
             vertex(ax, ay, color);
             vertex(dx, dy, color);
@@ -70,7 +67,6 @@ public final class ColoredMesh {
         maxY = Math.max(maxY, y);
     }
 
-    /** z of (b - a) x (c - a); negative is the winding vanilla's GUI rectangles use. */
     private static float cross(float ax, float ay, float bx, float by, float cx, float cy) {
         return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
     }

@@ -21,10 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Builds the RIGHT debug column in the 1.16.1 layout: system info, then the targeted
- * block / fluid / entity, then any lines other mods add to the debug screen.
- */
+// Right column: system info, then whatever you're looking at, then lines from other mods.
 public final class RightColumn {
     private static final double TARGET_RANGE = 20.0;
 
@@ -77,7 +74,7 @@ public final class RightColumn {
             addTagsIfEnabled(mc, lines, DebugScreenEntries.LOOKING_AT_BLOCK_TAGS, state);
         }
 
-        // 1.16.1 ray-casts again including fluids, so a solid block shows up here as minecraft:empty.
+        // 1.16 raycasts again with fluids, so on a solid block this shows minecraft:empty
         HitResult fluidHit = camera.pick(TARGET_RANGE, 0.0F, true);
         if (fluidHit.getType() == HitResult.Type.BLOCK) {
             BlockPos pos = ((BlockHitResult) fluidHit).getBlockPos();
@@ -97,10 +94,7 @@ public final class RightColumn {
         }
     }
 
-    /**
-     * 26.3 blocks carry dozens of tags (1.16.1 had a handful), so like vanilla 26.3 they stay hidden
-     * unless "Looking at block/fluid tags" is turned on in F3 + F6.
-     */
+    // blocks have dozens of tags now, so only show them when they're turned on in F3 + F6 like vanilla
     private static void addTagsIfEnabled(Minecraft mc, List<String> lines, Identifier entry, TypedInstance<?> state) {
         if (mc.debugEntries.isCurrentlyEnabled(entry)) {
             DebugEntryLookingAt.addTagEntries(lines, state);

@@ -12,10 +12,7 @@ import java.util.Map;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
-/**
- * {@code /standardsettings}: status, {@code save} (current options become the standard),
- * {@code apply}, {@code on} and {@code off}.
- */
+// /standardsettings [save|apply|on|off]
 public final class StandardSettingsCommand {
     private StandardSettingsCommand() {}
 

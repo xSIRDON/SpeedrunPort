@@ -42,10 +42,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Builds the LEFT debug column in the 1.16.1 layout. Line order and wording follow 1.16.1;
- * every value comes from the running game.
- */
+// Left column: same lines, wording and order as 1.16.1, filled with live data.
 public final class LeftColumn {
     private static final Map<Heightmap.Types, String> HEIGHTMAP_NAMES = Maps.newEnumMap(Map.of(
             Heightmap.Types.WORLD_SURFACE_WG, "SW",
@@ -57,13 +54,7 @@ public final class LeftColumn {
 
     private LeftColumn() {}
 
-    /**
-     * @param level         the integrated server's level when in singleplayer, else the client level
-     * @param clientChunk   the client chunk the camera is in, if loaded
-     * @param serverChunk   the matching integrated-server chunk, once it has been fetched
-     * @param pieVisible    whether the Shift+F3 profiler pie is showing
-     * @param graphsVisible whether the Alt+F3 FPS/TPS graphs are showing
-     */
+    // level is the integrated server's level in singleplayer, otherwise the client one
     public static List<String> build(Minecraft mc, @Nullable Level level, @Nullable LevelChunk clientChunk,
                                      @Nullable LevelChunk serverChunk, boolean pieVisible, boolean graphsVisible) {
         List<String> lines = new ArrayList<>();
@@ -126,7 +117,7 @@ public final class LeftColumn {
         return lines;
     }
 
-    /** Light, heightmaps, biome, local difficulty and mob caps: the block 1.16.1 shows under "Facing". */
+    // light, heightmaps, biome, local difficulty, mob caps
     private static void addWorldInfo(List<String> lines, Minecraft mc, ClientLevel clientLevel, @Nullable Level level,
                                      @Nullable ServerLevel serverLevel, @Nullable LevelChunk clientChunk,
                                      @Nullable LevelChunk serverChunk, BlockPos pos) {
@@ -172,7 +163,7 @@ public final class LeftColumn {
         if (clientLevel.isInsideBuildHeight(pos.getY())) {
             lines.add("Biome: " + biomeName(clientLevel.getBiome(pos)));
 
-            // Like 1.16.1: use the server's numbers when we have them, otherwise the client's best guess.
+            // server numbers if we have them, otherwise a guess from the client side (1.16 did the same)
             Level difficultyLevel = level != null ? level : clientLevel;
             long inhabitedTime = serverChunk != null ? serverChunk.getInhabitedTime() : 0L;
             float moonBrightness = serverLevel != null && serverChunk != null ? serverLevel.getMoonBrightness(pos) : 0.0F;
@@ -225,7 +216,7 @@ public final class LeftColumn {
         return String.format(Locale.ROOT, "\"%s\" server%s, %.0f tx, %.0f rx", listener.serverBrand(), status, sent, received);
     }
 
-    /** Modern /tick state, shown only when it is not the normal 20 TPS run (1.16.1 had no such state). */
+    // /tick freeze and sprint, which 1.16 didn't have
     private static String tickStatus(Minecraft mc, TickRateManager tickRate) {
         IntegratedServer server = mc.getSingleplayerServer();
         if (server != null && server.tickRateManager().isSprinting()) {
@@ -274,7 +265,7 @@ public final class LeftColumn {
         }
     }
 
-    /** One failing data source must never blank the whole overlay or crash the HUD. */
+    // one broken data source shouldn't take the whole F3 down
     private static void guarded(List<String> lines, Runnable section) {
         int size = lines.size();
         try {

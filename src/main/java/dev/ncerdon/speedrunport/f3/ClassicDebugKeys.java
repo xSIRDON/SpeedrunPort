@@ -13,10 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * The 1.16.1 debug keys that 26.x removed: F3 + F (render distance) and F3 + Q (key list).
- * They live in the Debug category of Controls, so they can be rebound like vanilla's.
- */
+// F3 + F and F3 + Q, which 26.x removed. Normal key mappings in the Debug category so they can be rebound.
 public final class ClassicDebugKeys {
     public static final KeyMapping CYCLE_RENDER_DISTANCE = new KeyMapping(
             "key.speedrunport.cycleRenderDistance", Compat.KEYBOARD, Compat.KEY_F, KeyMapping.Category.DEBUG);
@@ -25,7 +22,6 @@ public final class ClassicDebugKeys {
 
     private ClassicDebugKeys() {}
 
-    /** F3 + F: one chunk further, or nearer while Shift is held. */
     public static void cycleRenderDistance(Minecraft mc, boolean reverse, Consumer<Component> feedback) {
         OptionInstance<Integer> renderDistance = mc.options.renderDistance();
         int min = 2;
@@ -37,12 +33,12 @@ public final class ClassicDebugKeys {
         }
         int next = F3Format.stepRenderDistance(renderDistance.get(), reverse, min, max);
         renderDistance.set(next);
-        // Saving also tells the server, which decides how many chunks it sends from this.
+        // save() also sends the new view distance to the server
         mc.options.save();
         feedback.accept(Component.translatable("speedrunport.debug.cycle_renderdistance.message", next));
     }
 
-    /** F3 + Q: the 1.16.1 list in its order, then the combos 1.16.1 never had. */
+    // 1.16.1's list in the same order, then the newer combos
     public static void showHelp(Minecraft mc, Consumer<Component> feedback) {
         Options options = mc.options;
         KeyMapping mod = options.keyDebugModifier;
@@ -82,7 +78,7 @@ public final class ClassicDebugKeys {
         }
     }
 
-    /** "F3 + Q", following the player's bindings; null when the action key is unbound. */
+    // "F3 + Q" using the actual bindings, null if the key is unbound
     public static @Nullable String combo(KeyMapping modifier, KeyMapping key) {
         return key.isUnbound() ? null : name(modifier) + " + " + name(key);
     }

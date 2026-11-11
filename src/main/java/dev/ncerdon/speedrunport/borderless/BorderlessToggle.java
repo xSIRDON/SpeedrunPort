@@ -5,7 +5,6 @@ import dev.ncerdon.speedrunport.compat.Compat;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
-/** The "Toggle Borderless Window" key (Controls > Miscellaneous, F12 by default). */
 public final class BorderlessToggle {
     public static final KeyMapping KEY = new KeyMapping(
             "key.speedrunport.borderlessWindow", Compat.KEYBOARD, Compat.KEY_F12, KeyMapping.Category.MISC);
@@ -16,7 +15,7 @@ public final class BorderlessToggle {
         BorderlessWindow window = (BorderlessWindow) (Object) mc.getWindow();
         boolean enable = !window.speedrunport$isBorderless();
         if (enable && mc.options.fullscreen().get()) {
-            // Asking for borderless means leaving F11 fullscreen; the window goes borderless on the way out.
+            // leave F11 fullscreen, the window goes borderless on the way out
             mc.options.fullscreen().set(false);
             mc.options.save();
         }

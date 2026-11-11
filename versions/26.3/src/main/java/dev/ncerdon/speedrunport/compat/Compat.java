@@ -24,9 +24,9 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 
-/** The calls that differ between 26.x versions; this is the 26.3 one. */
+// Everything that differs between 26.x versions goes through here. This is the 26.3 one.
 public final class Compat {
-    /** 26.3 key mappings store SDL scancodes. */
+    // 26.3 key mappings use SDL scancodes
     public static final InputConstants.Type KEYBOARD = InputConstants.Type.KEYBOARD;
     public static final int KEY_F = 9;
     public static final int KEY_Q = 20;
@@ -60,7 +60,6 @@ public final class Compat {
         return mc.levelExtractor.entityStatistics();
     }
 
-    /** Per-type breakdown ending in the total, e.g. "SO 16 T 16". */
     public static String particleCount(Minecraft mc) {
         return mc.particleEngine.countParticles();
     }
@@ -77,7 +76,7 @@ public final class Compat {
         return DebugEntrySystemSpecs.getCpuInfo();
     }
 
-    /** "Display: WxH (vendor)", the renderer, and the API version, like 1.16.1's three GPU lines. */
+    // the three GPU lines from 1.16.1: display + vendor, renderer, api version
     public static List<String> gpuLines(Window window) {
         var device = RenderSystem.getDevice().getDeviceInfo();
         return List.of(
@@ -86,7 +85,7 @@ public final class Compat {
                 device.backendName() + " " + device.driverInfo().lines().findFirst().orElse(""));
     }
 
-    /** {min, max} of an integer slider option, or null if it isn't a plain range. */
+    // {min, max} of a slider option, null if it isn't a plain int range
     public static int @Nullable [] intRange(OptionInstance<Integer> option) {
         return option.values() instanceof OptionInstance.IntRangeBase range
                 ? new int[] {range.minInclusive(), range.maxInclusive()}
@@ -127,7 +126,7 @@ public final class Compat {
         }
     }
 
-    /** For the game test: the classic F3 must ignore 26.3's "Debug GUI Scale". */
+    // used by the game test
     public static void setDebugGuiScaleAuto(Minecraft mc) {
         mc.options.debugGuiScale().set(0);
     }

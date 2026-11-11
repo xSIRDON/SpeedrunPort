@@ -14,10 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Optional;
 
-/** Where StandardSettings hooks new worlds. */
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
-    /** Every way of making a new singleplayer world ends up here with {@code newWorld} set. */
+    // every way of making a new world goes through here with newWorld = true
     @Inject(method = "doWorldLoad", at = @At("HEAD"))
     private void speedrunport$standardSettings(LevelStorageSource.LevelStorageAccess levelAccess, PackRepository packs,
                                                WorldStem worldStem, Optional<GameRules> gameRules, boolean newWorld,

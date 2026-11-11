@@ -3,7 +3,7 @@ package dev.ncerdon.speedrunport.gametest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 
-/** Test harness calls that changed between Fabric API versions; 26.1's harness is the older one. */
+// test harness calls that differ between fabric api versions
 final class TestCompat {
     private TestCompat() {}
 
@@ -11,7 +11,7 @@ final class TestCompat {
         singleplayer.getClientLevel().waitForChunksRender();
     }
 
-    /** No TestInput.lookAt yet, so turn the player directly. */
+    // no TestInput.lookAt in this version
     static void lookAt(ClientGameTestContext context, float yaw, float pitch) {
         context.runOnClient(mc -> {
             mc.player.setYRot(yaw);

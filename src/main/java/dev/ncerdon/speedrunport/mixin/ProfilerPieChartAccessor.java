@@ -4,7 +4,7 @@ import net.minecraft.client.gui.components.debugchart.ProfilerPieChart;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** StandardSettings' pieDirectory: where the pie chart starts after joining a new world. */
+// for StandardSettings pieDirectory
 @Mixin(ProfilerPieChart.class)
 public interface ProfilerPieChartAccessor {
     @Accessor("profilerTreePath")

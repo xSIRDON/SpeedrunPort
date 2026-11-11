@@ -3,7 +3,7 @@ package dev.ncerdon.speedrunport.gametest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 
-/** Test harness calls that changed between Fabric API versions. */
+// test harness calls that differ between fabric api versions
 final class TestCompat {
     private TestCompat() {}
 

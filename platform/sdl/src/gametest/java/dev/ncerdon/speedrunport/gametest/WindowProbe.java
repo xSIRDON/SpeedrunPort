@@ -11,7 +11,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Asks SDL directly about the real window, since the test harness fakes window size events. */
+// asks SDL about the real window since the test harness fakes resize events
 final class WindowProbe {
     private WindowProbe() {}
 

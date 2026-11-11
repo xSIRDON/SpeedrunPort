@@ -11,11 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * {@code standardoptions.txt}: options.txt lines ({@code key:value}) to force on every new world,
- * plus a few speedrun extras. Same format StandardSettings uses, including a file whose only line is
- * the path of another one (so several instances can share one file).
- */
+// standardoptions.txt: options.txt lines to force on every new world plus some extras. Same format as
+// the StandardSettings mod, including a file whose only line is a path to another one (so instances
+// can share a file).
 public final class StandardOptionsFile {
     public static final String FILE_NAME = "standardoptions.txt";
 
@@ -33,19 +31,19 @@ public final class StandardOptionsFile {
     public static final String AUTO_F3_ESC = "autoF3Esc";
     public static final String AUTO_F3_ESC_DELAY = "firstAutoF3EscDelay";
 
-    /** Lines that aren't options.txt settings. */
+    // not options.txt settings
     public static final Set<String> EXTRAS = Set.of(ENABLED, HITBOXES, CHUNK_BORDERS, PERSPECTIVE, HIDE_GUI,
             PIE_DIRECTORY, FOV_ON_JOIN, RENDER_DISTANCE_ON_JOIN, SIMULATION_DISTANCE_ON_JOIN,
             ENTITY_DISTANCE_ON_JOIN, GUI_SCALE_ON_JOIN, AUTO_F3_ESC, AUTO_F3_ESC_DELAY);
 
-    /** options.txt lines that are bookkeeping for one install rather than settings, so never forced. */
+    // per-install stuff, never forced
     public static final Set<String> NOT_SETTINGS = Set.of("version", "lastServer", "resourcePacks",
             "incompatibleResourcePacks", "tutorialStep", "joinedFirstServer", "skipMultiplayerWarning",
             "onboardAccessibility", "startedCleanly", "telemetryOptInExtra");
 
     private StandardOptionsFile() {}
 
-    /** The file to actually read: {@code file} itself, or the file its single line points to. */
+    // follows the one-line redirect if the file is one
     public static Path resolve(Path file) throws IOException {
         List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8).stream()
                 .filter(line -> !line.isBlank()).toList();
@@ -56,7 +54,7 @@ public final class StandardOptionsFile {
                     return target;
                 }
             } catch (InvalidPathException ignored) {
-                // A single "key:value" line, not a path.
+                // just a key:value line, not a path
             }
         }
         return file;
@@ -66,7 +64,6 @@ public final class StandardOptionsFile {
         return parse(Files.readAllLines(resolve(file), StandardCharsets.UTF_8));
     }
 
-    /** {@code key:value} lines in order; anything without a colon is ignored. Later lines win. */
     public static Map<String, String> parse(List<String> lines) {
         Map<String, String> values = new LinkedHashMap<>();
         for (String line : lines) {
@@ -84,24 +81,20 @@ public final class StandardOptionsFile {
         return lines;
     }
 
-    /** Writes through a redirect file to the shared file it points at, like reading does. */
+    // writes through the redirect too
     public static void write(Path file, Map<String, String> values) throws IOException {
         Path target = Files.exists(file) ? resolve(file) : file;
         Files.createDirectories(target.toAbsolutePath().getParent());
         Files.write(target, format(values), StandardCharsets.UTF_8);
     }
 
-    /** The options.txt settings to force: everything except the extras and bookkeeping lines. */
     public static Map<String, String> settingsOnly(Map<String, String> values) {
         Map<String, String> settings = new LinkedHashMap<>(values);
         settings.keySet().removeIf(key -> EXTRAS.contains(key) || NOT_SETTINGS.contains(key));
         return settings;
     }
 
-    /**
-     * The current options as the new standard, keeping the extras already in the old file (they
-     * aren't options.txt settings, so the current options can't say what they should be).
-     */
+    // keeps the extras from the old file, options.txt doesn't have those
     public static Map<String, String> fromCurrentOptions(Map<String, String> currentOptions, Map<String, String> previous) {
         Map<String, String> standard = settingsOnly(currentOptions);
         previous.forEach((key, value) -> {
@@ -116,7 +109,7 @@ public final class StandardOptionsFile {
         return !"false".equals(values.getOrDefault(ENABLED, "true").strip());
     }
 
-    /** StandardSettings writes the pie path with dots; 26.x's profiler separates sections with \u001e. */
+    // the file writes the pie path with dots, the profiler uses \u001e between sections
     public static String pieDirectoryToProfilerPath(String pieDirectory) {
         return pieDirectory.strip().replace('.', '\u001e');
     }

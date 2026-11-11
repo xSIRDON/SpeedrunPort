@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-/** {@code config/speedrunport.properties}: settings the mod remembers between launches. */
+// config/speedrunport.properties
 public final class SpeedrunPortConfig {
     private static final String BORDERLESS_WINDOW = "borderlessWindow";
 
@@ -30,7 +30,7 @@ public final class SpeedrunPortConfig {
         return FabricLoader.getInstance().getConfigDir().resolve("speedrunport.properties");
     }
 
-    // Loaded on first use: the window is created before mod initializers are guaranteed to have run.
+    // lazy because the window (which needs this) can be created before our client init runs
     private static Properties properties() {
         if (properties == null) {
             properties = new Properties();

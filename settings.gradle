@@ -8,7 +8,7 @@ pluginManagement {
 
 rootProject.name = "speedrunport"
 
-// One build per Minecraft API: 26.1 covers 26.1 - 26.1.2.
+// 26.1 covers 26.1 - 26.1.2
 ["26.1", "26.2", "26.3"].each { version ->
     include ":$version"
     project(":$version").projectDir = file("versions/$version")
