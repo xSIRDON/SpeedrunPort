@@ -5,6 +5,7 @@ import dev.ncerdon.speedrunport.SpeedrunPortConfig;
 import dev.ncerdon.speedrunport.borderless.BorderlessBounds;
 import dev.ncerdon.speedrunport.borderless.BorderlessBounds.Rect;
 import dev.ncerdon.speedrunport.borderless.BorderlessToggle;
+import dev.ncerdon.speedrunport.compat.Compat;
 import dev.ncerdon.speedrunport.f3.ClassicDebugKeys;
 import dev.ncerdon.speedrunport.f3.RightColumn;
 import dev.ncerdon.speedrunport.standardsettings.StandardSettings;
@@ -16,6 +17,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -36,7 +39,10 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
         }
         input.resizeWindow(1280, 720);
 
+        String firstWorld;
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
+            firstWorld = singleplayer.getServer().computeOnServer(
+                    server -> server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().getFileName().toString());
             TestCompat.waitForChunksRender(singleplayer);
             singleplayer.getServer().runCommand("setblock ~2 ~ ~ minecraft:oak_stairs[facing=east,waterlogged=true]");
             singleplayer.getServer().runCommand("summon minecraft:cow ~4 ~ ~3");
@@ -126,13 +132,22 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
 
         Path standardFile = StandardSettings.file();
         try {
-            Files.write(standardFile, List.of("maxFps:90", "chunkborders:true", "renderDistanceOnWorldJoin:7"));
-            context.runOnClient(mc -> mc.options.framerateLimit().set(200));
+            Files.write(standardFile, List.of("maxFps:90", "toggleCrouch:true", "chunkborders:true", "renderDistanceOnWorldJoin:7",
+                    "fovOnWorldJoin:0.5", "sneaking:false", "autoF3Esc:true", "firstAutoF3EscDelay:0"));
+            context.runOnClient(mc -> {
+                mc.options.framerateLimit().set(200);
+                mc.options.toggleCrouch().set(true);
+                mc.options.keyShift.setDown(true);
+            });
             try (TestSingleplayerContext standardWorld = context.worldBuilder().create()) {
                 context.waitFor(mc -> mc.player != null && mc.level.getChunkSource()
                         .hasChunk(mc.player.chunkPosition().x() + 6, mc.player.chunkPosition().z()), 1200);
+                check(context, Minecraft::isWindowActive, "the test window has focus");
                 check(context, mc -> mc.options.framerateLimit().get() == 90, "the standard maxFps is applied to the new world");
                 check(context, mc -> mc.options.renderDistance().get() == 7, "renderDistanceOnWorldJoin is applied on join");
+                check(context, mc -> mc.options.fov().get() == 90, "fovOnWorldJoin:0.5 means 90 like in options.txt");
+                check(context, mc -> !mc.options.keyShift.isDown(), "sneaking:false turns toggled sneak off");
+                check(context, mc -> !(Compat.screen(mc) instanceof PauseScreen), "autoF3Esc doesn't pause a focused game");
                 check(context, mc -> mc.debugEntries.isCurrentlyEnabled(DebugScreenEntries.CHUNK_BORDERS), "chunkborders turns chunk borders on");
                 boolean snapshot = standardWorld.getServer().computeOnServer(
                         server -> Files.exists(server.getWorldPath(LevelResource.ROOT).resolve("standardoptions.txt")));
@@ -148,6 +163,18 @@ public class SpeedrunPortClientGameTest implements FabricClientGameTest {
                 }
                 context.runOnClient(mc -> mc.debugEntries.setStatus(DebugScreenEntries.CHUNK_BORDERS, DebugScreenEntryStatus.NEVER));
             }
+
+            context.waitFor(mc -> mc.level == null, 600);
+            context.runOnClient(mc -> mc.createWorldOpenFlows().openWorld(firstWorld, () -> {}));
+            context.waitFor(mc -> mc.player != null && Compat.screen(mc) == null && mc.getSingleplayerServer() != null
+                    && mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize()
+                            .getFileName().toString().equals(firstWorld), 1200);
+            check(context, mc -> mc.options.framerateLimit().get() == 200, "reopening the previous world brings its maxFps back");
+            context.runOnClient(mc -> {
+                mc.disconnect(new TitleScreen(), false);
+                mc.options.toggleCrouch().set(false);
+            });
+            context.waitFor(mc -> mc.level == null && Compat.screen(mc) instanceof TitleScreen, 600);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {

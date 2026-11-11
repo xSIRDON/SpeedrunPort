@@ -34,7 +34,8 @@ class StandardOptionsFileTest {
     @Test
     void settingsOnly_dropsExtrasAndBookkeeping() {
         Map<String, String> values = StandardOptionsFile.parse(List.of(
-                "version:4790", "fov:0.5", "chunkborders:true", "renderDistanceOnWorldJoin:12", "lastServer:x", "maxFps:260"));
+                "version:4790", "fov:0.5", "chunkborders:true", "renderDistanceOnWorldJoin:12", "lastServer:x", "maxFps:260",
+                "sneaking:false", "changeOnResize:true"));
         assertEquals(List.of("fov", "maxFps"), List.copyOf(StandardOptionsFile.settingsOnly(values).keySet()));
     }
 
@@ -55,6 +56,15 @@ class StandardOptionsFileTest {
         assertTrue(StandardOptionsFile.isEnabled(Map.of()));
         assertTrue(StandardOptionsFile.isEnabled(Map.of("toggleStandardSettings", "true")));
         assertFalse(StandardOptionsFile.isEnabled(Map.of("toggleStandardSettings", "false")));
+    }
+
+    @Test
+    void fovDegrees_acceptsOptionsTxtScaleOrDegrees() {
+        assertEquals(70.0, StandardOptionsFile.fovDegrees(0.0));
+        assertEquals(90.0, StandardOptionsFile.fovDegrees(0.5));
+        assertEquals(30.0, StandardOptionsFile.fovDegrees(-1.0));
+        assertEquals(110.0, StandardOptionsFile.fovDegrees(1.0));
+        assertEquals(85.0, StandardOptionsFile.fovDegrees(85.0));
     }
 
     @Test

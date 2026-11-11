@@ -32,8 +32,9 @@ window toggle that plays nice with overlays like Ninjabrain Bot, and has Standar
 
 **StandardSettings**
 
-Resets your options every time you make a new world, so every run starts the same. Same idea and
-file format as the StandardSettings mod.
+Resets your options every time you make a new world, so every run starts the same. Uses the
+`standardoptions.txt` format from the StandardSettings mod before 2.0 (2.0 moved to a json file and
+an in-game screen).
 
 - set your options how you want them, then run `/standardsettings save` in any world. That writes
   `config/standardoptions.txt` from your current settings (it does nothing until that file exists)
@@ -41,6 +42,7 @@ file format as the StandardSettings mod.
   want forced. If the file's only line is a path to another file, that file is used instead, so
   several instances can share one
 - every new world gets a copy in its folder (`saves/<world>/standardoptions.txt`) for verification
+- reopening the world you were in before the reset brings back the settings you had there
 - `/standardsettings` shows the status, `/standardsettings off` / `on` turns it off and on,
   `/standardsettings apply` applies it right now
 
@@ -52,14 +54,17 @@ Extra lines it understands:
 | `hitboxes:true` | hitboxes on |
 | `perspective:0` | camera: 0 first person, 1 back, 2 front |
 | `f1:false` | hide the HUD or not |
+| `sneaking:false` | sneak state when toggle sneak is on |
+| `sprinting:false` | sprint state when toggle sprint is on |
 | `pieDirectory:root.render.level` | where the F3 pie chart starts. `/standardsettings save` stores wherever you navigated the pie to |
-| `fovOnWorldJoin:90` | FOV once you're in the world |
-| `renderDistanceOnWorldJoin:12` | render distance once you're in the world (keep the normal one low for a fast world load) |
+| `fovOnWorldJoin:90` | FOV once you're in the world and the game window is focused. 30 to 110, or -1.0 to 1.0 like options.txt |
+| `renderDistanceOnWorldJoin:12` | same for render distance (keep the normal one low for a fast world load and background instances) |
 | `simulationDistanceOnWorldJoin:8` | same for simulation distance |
 | `entityDistanceScalingOnWorldJoin:1.0` | same for entity distance |
 | `guiScaleOnWorldJoin:3` | same for GUI scale |
-| `autoF3Esc:true` | pause without the menu right after joining |
-| `firstAutoF3EscDelay:22` | ticks to wait before that pause |
+| `changeOnResize:true` | resizing the window also applies the OnWorldJoin values, for macros |
+| `autoF3Esc:true` | pause without the menu when a world finishes loading in an unfocused window |
+| `firstAutoF3EscDelay:22` | ticks to wait before that pause, only on the first world after launch |
 | `toggleStandardSettings:false` | turn it all off |
 
 ## Install

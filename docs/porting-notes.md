@@ -37,9 +37,12 @@ it (BorderlessBounds). has to be re-applied after leaving F11 since vanilla puts
 
 ## standardsettings
 
-hooked at `Minecraft.doWorldLoad` HEAD when newWorld is true, before generation. applies by
-save -> overlay the lines onto options.txt -> load -> save, so vanilla parses everything. on-join
-values from `ClientPlayConnectionEvents.JOIN`, only if the joined world is the one just created.
+hooked at `Minecraft.doWorldLoad` HEAD, before generation. new world: cache the touched options of
+the last world, then apply by save -> overlay the lines onto options.txt -> load -> save, so vanilla
+parses everything (language needs its own reload). existing world: restore the cache if it's the
+cached one. on-join values from `ClientPlayConnectionEvents.JOIN` if the window is focused, otherwise
+on the first focused tick or `resizeGui` with changeOnResize. no focus event to hook, `Window.focused`
+is only read through `isWindowActive()`
 
 `waitForChunksRender()` in game tests never finishes after the render distance changes mid-join,
 wait for one chunk past the old distance instead

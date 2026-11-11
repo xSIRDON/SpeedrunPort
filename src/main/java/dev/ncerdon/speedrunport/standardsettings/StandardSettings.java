@@ -5,11 +5,14 @@ import dev.ncerdon.speedrunport.compat.Compat;
 import dev.ncerdon.speedrunport.mixin.ProfilerPieChartAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.CameraType;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.resources.language.LanguageManager;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.LevelResource;
@@ -30,7 +33,15 @@ public final class StandardSettings {
 
     private static @Nullable Map<String, String> pendingJoin;
     private static @Nullable Path pendingWorld;
-    private static int autoPauseIn = -1;
+    private static @Nullable Map<String, String> waitingForFocus;
+    private static @Nullable Map<String, String> pendingKeys;
+    private static boolean autoPause;
+    private static int pauseDelay;
+    private static boolean firstWorldPaused;
+
+    private static @Nullable Path lastWorld;
+    private static @Nullable Path cachedWorld;
+    private static @Nullable Map<String, String> cachedOptions;
 
     private StandardSettings() {}
 
@@ -51,17 +62,39 @@ public final class StandardSettings {
         }
     }
 
-    public static void onNewWorld(Minecraft mc, Path worldFolder) {
+    public static void onWorldLoad(Minecraft mc, Path world, boolean newWorld) {
+        pendingJoin = null;
+        pendingWorld = null;
+        waitingForFocus = null;
+        pendingKeys = null;
+        autoPause = false;
+        if (newWorld) {
+            if (sameFolder(world, cachedWorld)) {
+                cachedWorld = null;
+                cachedOptions = null;
+            }
+            if (lastWorld != null && sameFolder(lastWorld, world)) {
+                lastWorld = null;
+            }
+            onNewWorld(mc, world);
+        } else {
+            restoreCache(mc, world);
+        }
+        lastWorld = world;
+    }
+
+    private static void onNewWorld(Minecraft mc, Path world) {
         Map<String, String> standard = read();
         if (standard == null || !isEnabled(standard)) {
             return;
         }
         try {
-            applySettings(mc, standard);
+            cacheLastWorld(mc, standard);
+            applyOptions(mc, settingsOnly(standard));
             applyExtras(mc, standard);
-            writeSnapshot(mc, standard, worldFolder);
+            writeSnapshot(mc, standard, world);
             pendingJoin = standard;
-            pendingWorld = worldFolder;
+            pendingWorld = world;
         } catch (IOException | RuntimeException e) {
             SpeedrunPortClient.LOGGER.error("StandardSettings: could not apply {}", file(), e);
         }
@@ -75,32 +108,56 @@ public final class StandardSettings {
         if (standard == null || !isWorld(mc, world)) {
             return;
         }
-        Options options = mc.options;
-        setNumber(options.fov(), standard.get(FOV_ON_JOIN), Number::intValue);
-        setNumber(options.renderDistance(), standard.get(RENDER_DISTANCE_ON_JOIN), Number::intValue);
-        setNumber(options.simulationDistance(), standard.get(SIMULATION_DISTANCE_ON_JOIN), Number::intValue);
-        setNumber(options.entityDistanceScaling(), standard.get(ENTITY_DISTANCE_ON_JOIN), Number::doubleValue);
-        setNumber(options.guiScale(), standard.get(GUI_SCALE_ON_JOIN), Number::intValue);
-        options.save();
 
         String pie = standard.get(PIE_DIRECTORY);
         if (pie != null && !pie.isBlank()) {
             ((ProfilerPieChartAccessor) mc.getDebugOverlay().getProfilerPieChart())
                     .speedrunport$setProfilerTreePath(pieDirectoryToProfilerPath(pie));
         }
-        if ("true".equals(standard.getOrDefault(AUTO_F3_ESC, "false").strip())) {
-            autoPauseIn = parseInt(standard.get(AUTO_F3_ESC_DELAY), DEFAULT_AUTO_F3_ESC_DELAY);
+        if (standard.containsKey(SNEAKING) || standard.containsKey(SPRINTING)) {
+            pendingKeys = standard;
+        }
+        if (isTrue(standard.get(AUTO_F3_ESC))) {
+            autoPause = !mc.isWindowActive();
+            pauseDelay = firstWorldPaused ? 0 : parseInt(standard.get(AUTO_F3_ESC_DELAY), DEFAULT_AUTO_F3_ESC_DELAY);
+            firstWorldPaused = true;
+        }
+        if (mc.isWindowActive()) {
+            applyOnJoin(mc, standard);
+        } else {
+            waitingForFocus = standard;
         }
     }
 
     public static void onTick(Minecraft mc) {
-        if (autoPauseIn < 0) {
+        if (mc.level == null) {
+            waitingForFocus = null;
+            pendingKeys = null;
+            autoPause = false;
             return;
         }
-        if (mc.level == null) {
-            autoPauseIn = -1;
-        } else if (autoPauseIn-- == 0 && Compat.screen(mc) == null) {
-            mc.pauseGame(true);
+        if (waitingForFocus != null && mc.isWindowActive()) {
+            applyOnJoin(mc, waitingForFocus);
+        }
+        if (pendingKeys != null && Compat.screen(mc) == null) {
+            applyKeys(mc, pendingKeys);
+            pendingKeys = null;
+        }
+        if (autoPause) {
+            if (mc.isWindowActive() || mc.getSingleplayerServer() == null || Compat.screen(mc) instanceof PauseScreen) {
+                autoPause = false;
+            } else if (pauseDelay > 0) {
+                pauseDelay--;
+            } else {
+                mc.pauseGame(true);
+                autoPause = false;
+            }
+        }
+    }
+
+    public static void onResize(Minecraft mc) {
+        if (waitingForFocus != null && isTrue(waitingForFocus.get(CHANGE_ON_RESIZE))) {
+            applyOnJoin(mc, waitingForFocus);
         }
     }
 
@@ -109,7 +166,7 @@ public final class StandardSettings {
         if (standard == null) {
             return false;
         }
-        applySettings(mc, standard);
+        applyOptions(mc, settingsOnly(standard));
         applyExtras(mc, standard);
         return true;
     }
@@ -132,13 +189,74 @@ public final class StandardSettings {
         StandardOptionsFile.write(file(), standard);
     }
 
-    private static void applySettings(Minecraft mc, Map<String, String> standard) throws IOException {
+    private static void applyOnJoin(Minecraft mc, Map<String, String> standard) {
+        waitingForFocus = null;
+        Options options = mc.options;
+        setNumber(options.fov(), standard.get(FOV_ON_JOIN), value -> (int) Math.round(fovDegrees(value.doubleValue())));
+        setNumber(options.renderDistance(), standard.get(RENDER_DISTANCE_ON_JOIN), Number::intValue);
+        setNumber(options.simulationDistance(), standard.get(SIMULATION_DISTANCE_ON_JOIN), Number::intValue);
+        setNumber(options.entityDistanceScaling(), standard.get(ENTITY_DISTANCE_ON_JOIN), Number::doubleValue);
+        setNumber(options.guiScale(), standard.get(GUI_SCALE_ON_JOIN), Number::intValue);
+        options.save();
+    }
+
+    private static void applyKeys(Minecraft mc, Map<String, String> standard) {
+        Options options = mc.options;
+        setToggled(options.keyShift, options.toggleCrouch().get(), standard.get(SNEAKING));
+        setToggled(options.keySprint, options.toggleSprint().get(), standard.get(SPRINTING));
+    }
+
+    private static void setToggled(KeyMapping key, boolean toggleMode, @Nullable String value) {
+        if (value != null && toggleMode && key.isDown() != isTrue(value)) {
+            key.setDown(true);
+        }
+    }
+
+    private static void cacheLastWorld(Minecraft mc, Map<String, String> standard) throws IOException {
+        if (lastWorld == null || sameFolder(lastWorld, cachedWorld)) {
+            return;
+        }
+        mc.options.save();
+        Map<String, String> current = readOptionsFile(mc);
+        Map<String, String> cached = new LinkedHashMap<>();
+        for (String key : settingsOnly(standard).keySet()) {
+            String value = current.get(key);
+            if (value != null) {
+                cached.put(key, value);
+            }
+        }
+        cachedOptions = cached;
+        cachedWorld = lastWorld;
+        SpeedrunPortClient.LOGGER.info("StandardSettings: cached the options of {}", folderName(lastWorld));
+    }
+
+    private static void restoreCache(Minecraft mc, Path world) {
+        if (cachedOptions == null || !sameFolder(world, cachedWorld)) {
+            return;
+        }
+        try {
+            applyOptions(mc, cachedOptions);
+            SpeedrunPortClient.LOGGER.info("StandardSettings: restored the options of {}", folderName(world));
+        } catch (IOException | RuntimeException e) {
+            SpeedrunPortClient.LOGGER.error("StandardSettings: could not restore the options for {}", world, e);
+        }
+        cachedOptions = null;
+        cachedWorld = null;
+    }
+
+    private static void applyOptions(Minecraft mc, Map<String, String> values) throws IOException {
         mc.options.save();
         Map<String, String> merged = readOptionsFile(mc);
-        merged.putAll(settingsOnly(standard));
+        merged.putAll(values);
         Files.write(mc.options.getFile().toPath(), format(merged), StandardCharsets.UTF_8);
         mc.options.load();
         mc.options.save();
+
+        LanguageManager languages = mc.getLanguageManager();
+        if (!languages.getSelected().equals(mc.options.languageCode)) {
+            languages.setSelected(mc.options.languageCode);
+            languages.onResourceManagerReload(mc.getResourceManager());
+        }
     }
 
     private static void applyExtras(Minecraft mc, Map<String, String> standard) {
@@ -151,7 +269,7 @@ public final class StandardSettings {
         }
         String hideGui = standard.get(HIDE_GUI);
         if (hideGui != null) {
-            Compat.setHudHidden(mc, "true".equals(hideGui.strip()));
+            Compat.setHudHidden(mc, isTrue(hideGui));
         }
     }
 
@@ -168,11 +286,15 @@ public final class StandardSettings {
 
     private static boolean isWorld(Minecraft mc, @Nullable Path world) {
         IntegratedServer server = mc.getSingleplayerServer();
-        if (server == null || world == null) {
-            return false;
-        }
-        return server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize()
-                .equals(world.toAbsolutePath().normalize());
+        return server != null && sameFolder(server.getWorldPath(LevelResource.ROOT), world);
+    }
+
+    private static boolean sameFolder(Path a, @Nullable Path b) {
+        return b != null && a.toAbsolutePath().normalize().equals(b.toAbsolutePath().normalize());
+    }
+
+    private static Path folderName(Path world) {
+        return world.toAbsolutePath().normalize().getFileName();
     }
 
     private static Map<String, String> readOptionsFile(Minecraft mc) throws IOException {
@@ -184,8 +306,7 @@ public final class StandardSettings {
 
     private static void setDebugRenderer(Minecraft mc, Identifier entry, @Nullable String value) {
         if (value != null) {
-            mc.debugEntries.setStatus(entry,
-                    "true".equals(value.strip()) ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
+            mc.debugEntries.setStatus(entry, isTrue(value) ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
         }
     }
 
@@ -198,6 +319,10 @@ public final class StandardSettings {
         } catch (NumberFormatException e) {
             SpeedrunPortClient.LOGGER.warn("StandardSettings: {} is not a number", value);
         }
+    }
+
+    private static boolean isTrue(@Nullable String value) {
+        return value != null && "true".equals(value.strip());
     }
 
     private static int parseInt(@Nullable String value, int fallback) {

@@ -20,8 +20,11 @@ public abstract class MinecraftMixin {
     private void speedrunport$standardSettings(LevelStorageSource.LevelStorageAccess levelAccess, PackRepository packs,
                                                WorldStem worldStem, Optional<GameRules> gameRules, boolean newWorld,
                                                CallbackInfo ci) {
-        if (newWorld) {
-            StandardSettings.onNewWorld((Minecraft) (Object) this, levelAccess.getLevelPath(LevelResource.ROOT));
-        }
+        StandardSettings.onWorldLoad((Minecraft) (Object) this, levelAccess.getLevelPath(LevelResource.ROOT), newWorld);
+    }
+
+    @Inject(method = "resizeGui", at = @At("TAIL"))
+    private void speedrunport$changeOnResize(CallbackInfo ci) {
+        StandardSettings.onResize((Minecraft) (Object) this);
     }
 }

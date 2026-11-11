@@ -27,10 +27,14 @@ public final class StandardOptionsFile {
     public static final String GUI_SCALE_ON_JOIN = "guiScaleOnWorldJoin";
     public static final String AUTO_F3_ESC = "autoF3Esc";
     public static final String AUTO_F3_ESC_DELAY = "firstAutoF3EscDelay";
+    public static final String CHANGE_ON_RESIZE = "changeOnResize";
+    public static final String SNEAKING = "sneaking";
+    public static final String SPRINTING = "sprinting";
 
     public static final Set<String> EXTRAS = Set.of(ENABLED, HITBOXES, CHUNK_BORDERS, PERSPECTIVE, HIDE_GUI,
             PIE_DIRECTORY, FOV_ON_JOIN, RENDER_DISTANCE_ON_JOIN, SIMULATION_DISTANCE_ON_JOIN,
-            ENTITY_DISTANCE_ON_JOIN, GUI_SCALE_ON_JOIN, AUTO_F3_ESC, AUTO_F3_ESC_DELAY);
+            ENTITY_DISTANCE_ON_JOIN, GUI_SCALE_ON_JOIN, AUTO_F3_ESC, AUTO_F3_ESC_DELAY, CHANGE_ON_RESIZE,
+            SNEAKING, SPRINTING);
 
     public static final Set<String> NOT_SETTINGS = Set.of("version", "lastServer", "resourcePacks",
             "incompatibleResourcePacks", "tutorialStep", "joinedFirstServer", "skipMultiplayerWarning",
@@ -98,6 +102,10 @@ public final class StandardOptionsFile {
 
     public static boolean isEnabled(Map<String, String> values) {
         return !"false".equals(values.getOrDefault(ENABLED, "true").strip());
+    }
+
+    public static double fovDegrees(double value) {
+        return value >= -1.0 && value <= 1.0 ? 70.0 + value * 40.0 : value;
     }
 
     public static String pieDirectoryToProfilerPath(String pieDirectory) {
